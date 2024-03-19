@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xmldata>
+{% for product in products %}
+	<Products>
+		<ProductCode>{{ product.productid }}</ProductCode>
+		<StockStatus>{{ product.stock }}</StockStatus>
+	</Products>
+{% endfor %}
+</xmldata>

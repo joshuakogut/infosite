@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{% block title %}Infosite{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'style.css' %}" />
+</head>
+
+<body>
+    <section class="lead">
+        <img src="/static/logo.svg" width="300" />
+    </section>
+    <section class="header">
+        {% block header %}{% endblock %}
+    </section>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

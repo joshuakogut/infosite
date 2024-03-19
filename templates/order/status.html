@@ -1,0 +1,128 @@
+
+{% extends "base_generic.html" %}
+
+{% block style %}
+
+        <style type="text/css">
+            span.value {
+                font-style: bold;
+                color: #444444;
+            }
+            span.age {
+                font-size: 0.9em;
+                color: #5d87b4;
+            }
+            body { padding: 0; margin: 0; }
+
+            
+            section.header, section.details {
+                border-bottom: 3px grey solid;
+            }
+            section.header {
+                background-color: #bdddff;
+            }
+            
+            table thead {
+                background-color: #cccccc;
+            }
+            
+
+            .header {
+                padding: 0;
+                display: flex;
+                flex-direction: row;
+            }
+            .header .logo {
+                width: 10%;
+            }
+            .header .info {
+                flex-grow: 1;
+            }
+            .header .contact {
+                width: 20%;
+            }
+        </style>
+{% endblock %}
+{% block header %}
+    <div class="info">
+        <h1>Order:    <span class="value">{{ order.ordernumber }}</span></h1>
+        <h2>Status:   <span class="value">{{ order.workflowstatus.description}}</span> <span class="age" title="{{order.workflowstatusdate}}">changed {{order.workflowstatusdate|timesince}} ago</span></h2>
+        <h3>Customer: <span class="value">{{ order.soldtoname  }}</span></h3>
+    </section>
+{% endblock %}
+
+
+{% block content %}
+<div class="status">
+            <h2>Details</h2>
+            <table>
+                <thead>
+                    <td class="img"><!-- img --></td>
+                    <td>SKU</td>
+                    <td>Description</td>
+                    <td>Available</td>
+                    <td>Price</td>
+                </thead>
+            {% for detail in details %}
+                <tr class="{% if detail.allocated %}green{% else %}red{% endif %}">
+                    <td class="img">
+                        {% if detail.hasimg %}
+                        <img src="/product/img/{{ detail.productid }}" />
+                        {% endif %}
+                    </td>
+                    <td>{{ detail.productid }}</td>
+                    <td {% if detail.sublinenumber > 0 %} class="indent"{%endif%}>
+                        
+                        {% if detail.productid  == 'Sales Tax' or detail.productid == 'Shipping' %}
+                            {{ detail.description }}
+                        {% else %}
+                            <a href="/product/{{ detail.productid }}">{{ detail.description }}</a>
+                        {% endif %}
+                        {% if detail.linetype == 'D' %}
+                        <h3>PO to {{ detail.vendor }} on <span class="date">{{ detail.ordered_on|date:'m/d/Y' }}</span></h3>
+                        {% endif %}
+                    </td>
+
+                    {% if detail.productid == 'Shipping' or detail.productid == 'Sales Tax' %}
+                    <td></td>
+                    {% elif order.workflowstatus.description == 'Completed' %}
+                    <td>{{ detail.qtyshipped | stringformat:'d' }}/{{ detail.qtyordered | stringformat:'d' }}</td>
+                    {% else %}
+                    <td>{{ detail.qtyscheduled | stringformat:'d' }}/{{ detail.qtyordered | stringformat:'d' }}</td>
+                    {% endif %}
+                    
+                    <td>
+                            {{ detail.price|floatformat:2 }}
+                    </td>
+                </tr>
+            {% endfor %}
+            </table>
+        </section>
+
+        <section class="packages">
+            <h2>Packages: {{ count }}</h2>
+            <table>
+                <thead>
+                    <td>Ship Date</td>
+                    <td>Service</td>
+                    <td>Tracking</td>
+                </thead>
+            {% for pkg in packages %}
+                <tr>
+                    <td>{{ pkg.date|date:'m/d/Y' }}</td>
+                    <td>{{ pkg.carrier }} {{ pkg.service }}</td>
+                    <td>
+                        {% if pkg.carrier == 'UPS' %}
+                            <a href="https://wwwapps.ups.com/tracking/tracking.cgi?tracknum={{ pkg.tracking }}">{{pkg.tracking}}</a>
+                        {% elif pkg.carrier == 'USPS' %}
+                            <a href="https://tools.usps.com/go/TrackConfirmAction_input?strOrigTrackNum={{ pkg.tracking }}">{{pkg.tracking}}</a>
+                        {% else %}
+                            {{ pkg.tracking }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </table>
+        </section>
+    </div>
+{% endblock %}

@@ -1,0 +1,120 @@
+body {
+    padding: 0em;
+}
+
+h2 {
+    margin:0;
+}
+ul {
+    margin: 0;
+    padding: 0;
+}
+ul li {
+    list-style-type: none;
+}
+section.detail, section.detail .text {
+    margin: 4em;
+}
+
+section {
+    padding: 2em 2em;
+}
+
+section.snippet {
+    display: flex;
+    flex-direction: row;
+    margin: 0.5em;
+    border: 1px #ccc solid;
+}
+section.snippet div.icon {
+    width: 15%;
+}
+
+section.snippet div.icon img {
+    max-width: 95%;
+    padding:0;
+}
+
+section.snippet div.text {
+    border-left: 2px solid grey;
+    flex-direction: column;
+    width:75%;
+    padding: 1em;
+}
+
+section.snippet div.text a {
+    color: black;
+    text-decoration: none;
+}
+
+section.snippet div.text h2  {
+    color: rgb(43, 83, 136);
+}
+
+div.pagination {
+    margin: 1em 0;
+    padding: 0.5em;
+    font-size: 1.5em;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+div.pagination a {
+    text-decoration: none;
+    background-color: #a8a8a8;
+    padding: 0.4em;
+    font-weight: bold;
+    color: white;
+}
+table {
+    min-width: 60%;
+}
+thead {
+    background-color: gray;
+
+}
+td {
+    padding: 1em;
+}
+tr.green td {
+    background-color: rgb(185, 255, 185);
+}
+tr.yellow td {
+    background-color: rgb(229, 222, 126);
+}
+tr.red td {
+    background-color: rgb(225, 152, 152);
+}
+td.indent {
+    padding-left: 2em;
+}
+
+span.age {
+    font-size: 0.8em;
+    color: rgb(83, 83, 83);
+    margin-left:0.5em;
+}
+
+
+.status table {
+    margin: 0;
+    padding: 0;
+}
+.status table td {
+    padding: 1em 2.5em;
+}
+.status td.img {
+    width: 7em;
+    padding: 0;
+    background-color: transparent !important;
+}
+.status img { width: 6em; }
+.status tr.green td {
+    background-color: rgb(173, 255, 173);
+}
+.status tr.red td {
+    background-color: rgb(200, 67, 67);
+}
+
+
+.logo .info {
+    margin-left: 20em;
+}

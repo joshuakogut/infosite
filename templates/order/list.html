@@ -1,0 +1,70 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            
+            <a href="?page={{ page_obj.previous_page_number }}">&laquo; previous</a>
+        {% endif %}
+
+        <span class="current">
+            page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next &raquo;</a>
+            
+        {% endif %}
+    </span>
+</div>
+
+    <table>
+        <thead>
+            <td>Order Number</td>
+            <td>Customer</td>
+            <td>Order Date</td>
+            <td>Workflow Status</td>
+            <td>Total Amount</td>
+        </thead>
+        {% for order in page_obj %}
+        <tr class="{% if order.workflowstatus == 'Pick on Hold' %}yellow{% elif order.qtybackordered == 0 %}green{% else %}red{% endif %}">
+            <td>
+                <a href="/order/{{ order.hash }}">{{order.ordernumber}}</a>
+            </td>
+            <td>
+                {{ order.soldtoname }}
+            </td>
+            <td>
+                {{ order.orderdate |date:'m/d/Y'}}
+            </td>
+            <td>
+                {{ order.workflowstatus }}<span class="age" title="{{ order.workflowstatusdate }}">{{ order.workflowstatusdate|timesince }} ago</span>
+            </td>
+            <td>
+                {{ order.totalamount|floatformat:"2g" }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                
+                <a href="?page={{ page_obj.previous_page_number }}">&laquo; previous</a>
+            {% endif %}
+    
+            <span class="current">
+                page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+    
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next &raquo;</a>
+                
+            {% endif %}
+        </span>
+    </div>
+
+{% endblock %}
