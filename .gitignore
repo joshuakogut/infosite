@@ -1,3 +1,4 @@
 *.pyc
 cookies.json
-**/dev_settings.py
+portal/dev_settings.py
+
