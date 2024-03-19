@@ -52,10 +52,27 @@ def translate_volusion_ts(source):
 
 
 if __name__ == "__main__":
-    web_products()
+    # web_products()
+
+    #         _             _
+    #     ___| |_ ___   ___| | __
+    #    / __| __/ _ \ / __| |/ /
+    #    \__ \ || (_) | (__|   <
+    #    |___/\__\___/ \___|_|\_\
+
+    available = Productwarehousesummary.objects.filter(product__availonweb=True).filter(
+        warehouse
+    )
 
 
 """
+ 
+            _               
+ _ __  _ __(_) ___ ___  ___ 
+| '_ \| '__| |/ __/ _ \/ __|
+| |_) | |  | | (_|  __/\__ \
+| .__/|_|  |_|\___\___||___/
+|_|     
 
     prices = Tbproductprice.objects              \
         .filter(product__availonweb=True)        \
