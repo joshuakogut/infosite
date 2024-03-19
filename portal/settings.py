@@ -16,7 +16,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 try:
-    from dev_settings import *
+    from portal.dev_settings import *
 except ImportError:
     pass
 
