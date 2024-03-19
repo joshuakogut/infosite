@@ -1,9 +1,11 @@
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 import humanfriendly as hf
 from portal import Logger
 
 logger = Logger("sync.trailgear.orders")
+
 
 class Tbproductclass(models.Model):
     guidproductclass = models.CharField(
@@ -668,8 +670,13 @@ class Tbproductsupplier(models.Model):
     )
 
     def set_remote_stock(self, newvalue):
-        logger.info( updated='remotestock', remotestock=newvalue, productid=self.product.productid, lastsync=hf.format_timespan(timezone.now()-self.lastsync))
-        
+        logger.info(
+            updated="remotestock",
+            remotestock=newvalue,
+            productid=self.product.productid,
+            lastsync=hf.format_timespan(timezone.now() - self.lastsync),
+        )
+
         self.remotestock = newvalue
         self.lastsync = timezone.now()
 
