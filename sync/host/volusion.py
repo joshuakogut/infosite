@@ -82,3 +82,25 @@ def update_price(products):
 	if r.status_code!=200:
 		raise VolusionError("Server didn't return a 200")
 	return r"""
+
+
+def update_products(products):  # list[dict[string:any]]
+    headers = {"Content-Type": "application/xml"}
+
+    xml = '<?xml version="1.0" encoding="utf-8" ?><xmldata>'
+    for code, stock, supplier, vendorsku in products:
+        xml += "<Products>"
+        xml += "	<ProductCode>%s</ProductCode>" % code
+        xml += "	<StockStatus>%s</StockStatus>" % stock
+        xml += (
+            "	<ProductDescription_AbovePricing>by %s</ProductDescription_AbovePricing>"
+            % supplier
+        )
+        xml += "	<ProductManufacturer>%s</ProductManufacturer>" % supplier
+        xml += "	<Vendor_PartNo>%s</Vendor_PartNo>" % vendorsku
+        xml += "</Products>"
+    xml += "</xmldata>"
+    r = requests.post(stock_api, data=xml, headers=headers)
+    if r.status_code != 200:
+        raise VolusionError("Server didn't return a 200")
+    return r

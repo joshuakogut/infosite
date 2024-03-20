@@ -17,6 +17,12 @@ import re
 import requests
 import xmltodict
 
+from bs4 import BeautifulSoup
+
+from portal import Logger
+
+logger = Logger("sync.volusion.prods")
+
 
 def get_volusion_products():
     infos = product_info()
@@ -52,52 +58,84 @@ def translate_volusion_ts(source):
 
 
 if __name__ == "__main__":
-    """           _                           _            _       
-    __      _____| |__    _ __  _ __ ___   __| |_   _  ___| |_ ___ 
-    \ \ /\ / / _ \ '_ \  | '_ \| '__/ _ \ / _` | | | |/ __| __/ __|
-     \ V  V /  __/ |_) | | |_) | | | (_) | (_| | |_| | (__| |_\__ \
-      \_/\_/ \___|_.__/  | .__/|_|  \___/ \__,_|\__,_|\___|\__|___/
-                         |_|   
-    """
+    # pull the web products
+    # get_volusion_products()
 
-    get_volusion_products()
+    # Locate the ones we want to rewrite
+    rewrite_candidates = Volusionproducts.objects.filter(
+        Q(productdescription__icontains="lcengineering.com")
+        | Q(productdescription__icontains="EPA")
+    )
 
-    #         _             _
-    #     ___| |_ ___   ___| | __
-    #    / __| __/ _ \ / __| |/ /
-    #    \__ \ || (_) | (__|   <
-    #    |___/\__\___/ \___|_|\_\
+    logger.info("sus products", count=len(rewrite_candidates))
+    for sus in rewrite_candidates:
 
-    """available = Productwarehousesummary.objects.filter(product__availonweb=True).filter(
-        warehouse
-    )"""
+        lce = False
+        epa = False
+
+        soup = BeautifulSoup(sus.productdescription, features="html.parser")
+
+        def lce_selector(tag):
+            return tag.name == "a" and "lcengineering.com" in tag.text.lower()
+
+        def epa_selector(tag):
+            return (
+                tag.name == "h3"
+                and tag.has_attr("class")
+                and "pdhead" in tag.get("class")
+                and "epa" in tag.text.lower()
+            )
+
+        old_link = soup.find(lce_selector)
+        if old_link is not None:
+            logger.info("removed lcengineering link from", productid=sus.productcode)
+            old_link.parent.clear()
+
+        epa_warning = soup.find(epa_selector)
+        if epa_warning is not None:
+            logger.info("removed EPA warning from", productid=sus.productcode)
+            epa_warning.clear()
+
+        if old_link is not None or epa_warning is not None:
+            sus.productdescription = str(soup)
+            sus.save()
+
+            # Send new description up to volusion
 
 
-"""
- 
-            _               
- _ __  _ __(_) ___ ___  ___ 
+"""  _ synchronize _
+ ___| |_ ___   ___| | __
+/ __| __/ _ \ / __| |/ /
+\__ \ || (_) | (__|   <
+|___/\__\___/ \___|_|\_\ """
+
+# available = Productwarehousesummary.objects.filter(product__availonweb=True).filter(
+#     warehouse
+# )
+
+"""        _               
+_ __  _ __(_) ___ ___  ___ 
 | '_ \| '__| |/ __/ _ \/ __|
-| |_) | |  | | (_|  __/\__ \
+| |_) | |  | | (_|  __/\__\\
 | .__/|_|  |_|\___\___||___/
 |_|     
 
-    prices = Tbproductprice.objects              \
-        .filter(product__availonweb=True)        \
-        .filter(product__discontinued=False)     \
-        .filter(product__status=True)            \
-        .filter(pricetype='P')
-        
-    print( prices.count() )
-
-    payload = []
-    for price in prices[ :100 ]:       
-        payload.append((price.product.productid, price.price))
+prices = Tbproductprice.objects              \
+    .filter(product__availonweb=True)        \
+    .filter(product__discontinued=False)     \
+    .filter(product__status=True)            \
+    .filter(pricetype='P')
     
-    result = update_stock( payload )
-    if result.ok:
-        print("Seems like a success")
-    else:
-        raise Exception( result )
+print( prices.count() )
 
-        """
+payload = []
+for price in prices[ :100 ]:       
+    payload.append((price.product.productid, price.price))
+
+result = update_stock( payload )
+if result.ok:
+    print("Seems like a success")
+else:
+    raise Exception( result )
+
+    """
