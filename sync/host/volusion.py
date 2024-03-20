@@ -19,19 +19,18 @@ def product_info():
         soup = BeautifulSoup(response.text, features="xml")
         data = soup.find_all("Products")
 
-        # data = xmltodict.parse(response.content)
+        if len(data) == 0:
+            break
+
         for product in data:
             info = {}
             for child in product.children:
-                info[child.name] = child.text
+                if child is not None and child.name is not None:
+                    info[child.name] = child.text
             infos.append(info)
 
-        """work =  data['xmldata']['Products']
-
-		infos += work
-		NextPage = len(work)>=100 and len(infos)<300
-		print("%s products downloaded" % len(work))
-		"""
+        if len(infos) > 299:
+            NextPage = False
 
     return infos
 

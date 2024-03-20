@@ -18,7 +18,7 @@ import requests
 import xmltodict
 
 
-def web_products():
+def get_volusion_products():
     infos = product_info()
 
     for prod in infos:
@@ -52,7 +52,15 @@ def translate_volusion_ts(source):
 
 
 if __name__ == "__main__":
-    # web_products()
+    """           _                           _            _       
+    __      _____| |__    _ __  _ __ ___   __| |_   _  ___| |_ ___ 
+    \ \ /\ / / _ \ '_ \  | '_ \| '__/ _ \ / _` | | | |/ __| __/ __|
+     \ V  V /  __/ |_) | | |_) | | | (_) | (_| | |_| | (__| |_\__ \
+      \_/\_/ \___|_.__/  | .__/|_|  \___/ \__,_|\__,_|\___|\__|___/
+                         |_|   
+    """
+
+    get_volusion_products()
 
     #         _             _
     #     ___| |_ ___   ___| | __
@@ -60,9 +68,9 @@ if __name__ == "__main__":
     #    \__ \ || (_) | (__|   <
     #    |___/\__\___/ \___|_|\_\
 
-    available = Productwarehousesummary.objects.filter(product__availonweb=True).filter(
+    """available = Productwarehousesummary.objects.filter(product__availonweb=True).filter(
         warehouse
-    )
+    )"""
 
 
 """

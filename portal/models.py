@@ -2921,6 +2921,57 @@ class Tborderdetail(models.Model):
         db_table = "tborderdetail"
 
 
+class Volusionproducts(models.Model):
+    productcode = models.CharField(
+        db_column="ProductCode",
+        primary_key=True,
+        max_length=150,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+    )  # Field name made lowercase.
+    productname = models.CharField(
+        db_column="ProductName",
+        max_length=350,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    productdescription = models.TextField(
+        db_column="ProductDescription",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    extinfo = models.TextField(
+        db_column="ExtInfo",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    techspecs = models.TextField(
+        db_column="TechSpecs",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    productprice = models.DecimalField(
+        db_column="ProductPrice", max_digits=19, decimal_places=4, blank=True, null=True
+    )  # Field name made lowercase.
+    lastmodby = models.CharField(
+        db_column="LastModBy",
+        max_length=10,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    lastmodified = models.DateTimeField(
+        db_column="LastModified", blank=True, null=True
+    )  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = "volusionproducts"
+
+
 """    _                   
 __   _(_) _____      _____ 
 \ \ / / |/ _ \ \ /\ / / __|
