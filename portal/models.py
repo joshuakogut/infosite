@@ -686,6 +686,99 @@ class Tbproductsupplier(models.Model):
         unique_together = (("guidproduct", "guidvendor", "vendorproductid"),)
 
 
+class Tbproductprice(models.Model):
+    guidproductprice = models.CharField(
+        db_column="GUIDProductPrice", primary_key=True, max_length=36
+    )  # Field name made lowercase.
+    product = models.ForeignKey(
+        Tbproduct,
+        on_delete=models.PROTECT,
+        db_column="GUIDProduct",
+        related_name="prices",
+    )
+    guidcustomer = models.CharField(
+        db_column="GUIDCustomer", max_length=36, blank=True, null=True
+    )  # Field name made lowercase.
+    guidcurrency = models.CharField(
+        db_column="GUIDCurrency", max_length=36, blank=True, null=True
+    )  # Field name made lowercase.
+    contractid = models.CharField(
+        db_column="ContractID",
+        max_length=25,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+
+    productpricecategory = models.CharField(
+        db_column="ProductPriceCategory",
+        max_length=25,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    pricecode = models.CharField(
+        db_column="PriceCode",
+        max_length=3,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    effectivedate = models.DateTimeField(
+        db_column="EffectiveDate", blank=True, null=True
+    )  # Field name made lowercase.
+    expirationdate = models.DateTimeField(
+        db_column="ExpirationDate", blank=True, null=True
+    )  # Field name made lowercase.
+    lowqty = models.DecimalField(
+        db_column="LowQty", max_digits=19, decimal_places=7, blank=True, null=True
+    )  # Field name made lowercase.
+    highqty = models.DecimalField(
+        db_column="HighQty", max_digits=19, decimal_places=7, blank=True, null=True
+    )  # Field name made lowercase.
+    pricetype = models.CharField(
+        db_column="PriceType",
+        max_length=2,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    price = models.DecimalField(
+        db_column="Price", max_digits=19, decimal_places=7, blank=True, null=True
+    )  # Field name made lowercase.
+    priceunit = models.CharField(
+        db_column="PriceUnit",
+        max_length=5,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    taxincluded = models.BooleanField(
+        db_column="TaxIncluded"
+    )  # Field name made lowercase.
+    discountable = models.BooleanField(
+        db_column="Discountable"
+    )  # Field name made lowercase.
+    note = models.TextField(
+        db_column="Note",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+
+    def __str__(self):
+        if self.pricetype == "P":
+            return "Static $%s" % self.price
+        elif "%" in self.pricetype:
+            "PCT Priced %s%%" % self.price
+        else:
+            "Unknown %s" % self.price
+
+    class Meta:
+        managed = False
+        db_table = "tbproductprice"
+
+
 class Tbwarehouse(models.Model):
     guidwarehouse = models.CharField(
         db_column="GUIDWarehouse", primary_key=True, max_length=36

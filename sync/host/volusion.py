@@ -4,6 +4,9 @@ import re
 from bs4 import BeautifulSoup
 from xml.sax.saxutils import escape
 from portal.settings import VOL_USER, VOL_PASS
+from portal import Logger
+
+logger = Logger("sync.host.volusion")
 
 
 class VolusionError(Exception):
@@ -41,6 +44,11 @@ def get_products(limit=99):
 
 
 def update_products(products):  # list[dict[string:any]]
+    if len(products) == 1:
+        logger.info(**products[0])
+    else:
+        logger.info("sending %s products to volusion", count=len(products))
+
     headers = {"Content-Type": "application/xml; charset=utf-8"}
 
     xml = '<?xml version="1.0" encoding="utf-8" ?><xmldata>'

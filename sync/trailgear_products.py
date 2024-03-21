@@ -46,20 +46,6 @@ def trailgear_products(limit=10):
 
     work = prods[:limit]
 
-    flat = [
-        [
-            ps.product.productid,
-            ps.vendorproductid,
-            ps.product.calculated_price,
-            ps.remotestock,
-            ps.lastsync,
-        ]
-        for ps in work
-    ]
-
-    # logger.info("\n"+tabulate.tabulate( flat, headers=['productid', 'vendorsku', 'productprice','stock','lastsync']))
-    # input(">>>>")
-
     driver = Agent(headless=False)
 
     with open("missing_tg_skus.txt", "r") as handle:
@@ -76,17 +62,19 @@ def trailgear_products(limit=10):
                     ps.set_remote_stock(data.stock)
                     ps.save()
 
-                    update_products(
-                        [
-                            {
-                                "ProductCode": ps.product.productid,
-                                "StockStatus": ps.remotestock,
-                                "ProductManufacturer": "Trail-Gear",
-                                "ProductDescription_AbovePricing": "by Trail-Gear",
-                                "Vendor_PartNo": ps.vendorproductid,
-                            }
-                        ]
-                    )
+                    product = {
+                        "ProductCode": ps.product.productid,
+                        "StockStatus": ps.remotestock,
+                        "ProductManufacturer": "Trail-Gear",
+                        "ProductDescription_AbovePricing": "by Trail-Gear",
+                        "Vendor_PartNo": ps.vendorproductid,
+                    }
+
+                    price = ps.product.prices.first()
+                    if price.pricetype == "P":
+                        product["ProductPrice"] = price.price
+
+                    update_products([product])
 
                 else:
                     logger.warning(
