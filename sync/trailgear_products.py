@@ -24,7 +24,7 @@ time_threshold = datetime.now() - timedelta(hours=12)
 
 def write_missing_products(missing_prods):
     if len(missing_prods) > 0:
-        with open("missing_tg_skus.txt", "w") as handle:
+        with open("missing_tg_skus.json", "w") as handle:
             json.dump(missing_prods, handle)
 
 
@@ -48,7 +48,7 @@ def trailgear_products(limit=10):
 
     driver = Agent(headless=False)
 
-    with open("missing_tg_skus.txt", "r") as handle:
+    with open("missing_tg_skus.json", "r") as handle:
         missing_prods = json.load(handle)
         logger.info("loaded missing skus", count=len(missing_prods))
 

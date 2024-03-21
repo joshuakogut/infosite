@@ -118,9 +118,9 @@ def rewrite_products(limit=99):
 
 if __name__ == "__main__":
     # pull the web products
-    # get_volusion_products()
+    get_volusion_products()
 
-    rewrite_products(limit=2000)
+# rewrite_products(limit=2000)
 
 
 """  _ synchronize _

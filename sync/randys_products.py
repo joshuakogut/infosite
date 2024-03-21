@@ -43,12 +43,6 @@ def rpp_products():
     return ps.order_by("lastsync")
 
 
-def write_missing_products(missing_prods):
-    if len(missing_prods) > 0:
-        with open("missing_rpp_skus.txt", "w") as handle:
-            json.dump(missing_prods, handle)
-
-
 def triage_products():
     products = rpp_products()
 
