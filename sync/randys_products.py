@@ -14,20 +14,18 @@ django.setup()
 
 from portal import Logger
 from portal.models import Tbproductsupplier
+from portal.settings import RPP_USER, RPP_PASS
 from django.utils import timezone
 from sync.agent import Agent
 import json
 
 logger = Logger("sync.host.randys")
 
-from sync.host.volusion import update_stock
+from sync.host.volusion import update_products
 
 root_url = "https://www.randysworldwide.com/"
 producturl = "https://www.randysworldwide.com/shop/%s"
 search_url = "https://www.randysworldwide.com/shop/?q=%s"
-
-rpp_username = "***REMOVED***"
-rpp_password = "***REMOVED***"
 
 
 def rpp_products():
@@ -143,14 +141,15 @@ def scrape_products(products):
                 ps.set_remote_stock(stock)
                 ps.save()
 
-                update_stock(
+                update_products(
                     [
-                        (
-                            ps.product.productid,
-                            ps.remotestock,
-                            "Randy's Worldwide",
-                            ps.vendorproductid,
-                        )
+                        {
+                            "ProductCode": ps.product.productid,
+                            "StockStatus": ps.remotestock,
+                            "ProductManufacturer": "Randy's Worldwide",
+                            "ProductDescription_AbovePricing": "by Randy's Worldwide",
+                            "Vendor_PartNo": ps.vendorproductid,
+                        }
                     ]
                 )
             else:

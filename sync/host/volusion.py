@@ -2,20 +2,25 @@ import requests
 import xmltodict
 import re
 from bs4 import BeautifulSoup
+from xml.sax.saxutils import escape
+from portal.settings import VOL_USER, VOL_PASS
 
 
 class VolusionError(Exception):
     pass
 
 
-product_api = "http://www.lceperformance.com/net/WebService.aspx?Login=joshkogut@lcengineering.com&EncryptedPassword=37710E05D6FE636A842B6BF582F4A53B9A5DC17232F54BF3098720A14759E0C6&EDI_Name=Generic\Products&SELECT_Columns=p.LastModBy,p.LastModified,p.ProductCode,p.ProductName,pd.ProductDescription,pe.ProductPrice,pm.ExtInfo,pm.ProductFeatures,pm.TechSpecs"
+product_get = "http://www.lceperformance.com/net/WebService.aspx?Login=%s&EncryptedPassword=%s&EDI_Name=Generic\\Products&SELECT_Columns=p.LastModBy,p.LastModified,p.ProductCode,p.ProductName,pd.ProductDescription,pe.ProductPrice,pm.ExtInfo,pm.ProductFeatures,pm.TechSpecs"
 
 
-def product_info():
+product_update = "https://www.lceperformance.com/net/WebService.aspx?Login=%s&EncryptedPassword=%s&Import=Update"
+
+
+def get_products(limit=99):
     infos = []
     NextPage = True
     while NextPage:
-        response = requests.get(product_api)
+        response = requests.get(product_get % (VOL_USER, VOL_PASS))
         soup = BeautifulSoup(response.text, features="xml")
         data = soup.find_all("Products")
 
@@ -29,78 +34,35 @@ def product_info():
                     info[child.name] = child.text
             infos.append(info)
 
-        if len(infos) > 299:
+        if len(infos) > limit:
             NextPage = False
 
     return infos
 
 
-# TODO, map dict for each product
-stock_api = "https://www.lceperformance.com/net/WebService.aspx?Login=joshkogut@lcengineering.com&EncryptedPassword=37710E05D6FE636A842B6BF582F4A53B9A5DC17232F54BF3098720A14759E0C6&Import=Update"
-
-
-def update_stock(products):
-    headers = {"Content-Type": "application/xml"}
-
-    xml = '<?xml version="1.0" encoding="utf-8" ?><xmldata>'
-    for code, stock, supplier, vendorsku in products:
-        xml += "<Products>"
-        xml += "	<ProductCode>%s</ProductCode>" % code
-        xml += "	<StockStatus>%s</StockStatus>" % stock
-        xml += (
-            "	<ProductDescription_AbovePricing>by %s</ProductDescription_AbovePricing>"
-            % supplier
-        )
-        xml += "	<ProductManufacturer>%s</ProductManufacturer>" % supplier
-        xml += "	<Vendor_PartNo>%s</Vendor_PartNo>" % vendorsku
-        xml += "</Products>"
-    xml += "</xmldata>"
-    r = requests.post(stock_api, data=xml, headers=headers)
-    if r.status_code != 200:
-        raise VolusionError("Server didn't return a 200")
-    return r
-
-
-# TODO, make functional
-# stock_api = "https://www.lceperformance.com/net/WebService.aspx?Login=joshkogut@lcengineering.com&EncryptedPassword=37710E05D6FE636A842B6BF582F4A53B9A5DC17232F54BF3098720A14759E0C6&Import=Update"
-def update_price(products):
-    pass
-
-    """headers = {'Content-Type':'application/xml'}
-
-	xml = '<?xml version="1.0" encoding="utf-8" ?><xmldata>'
-	for (code,stock,supplier, vendorsku) in products:
-		xml += '<Products>'
-		xml += '	<ProductCode>%s</ProductCode>' % code
-		xml += '	<StockStatus>%s</StockStatus>' % stock
-		xml += '	<ProductDescription_AbovePricing>by %s</ProductDescription_AbovePricing>' % supplier
-		xml += '	<ProductManufacturer>%s</ProductManufacturer>' % supplier
-		xml += '	<Vendor_PartNo>%s</Vendor_PartNo>' % vendorsku
-		xml += '</Products>'
-	xml += '</xmldata>'
-	r =  requests.post( stock_api, data=xml, headers=headers )
-	if r.status_code!=200:
-		raise VolusionError("Server didn't return a 200")
-	return r"""
-
-
 def update_products(products):  # list[dict[string:any]]
-    headers = {"Content-Type": "application/xml"}
+    headers = {"Content-Type": "application/xml; charset=utf-8"}
 
     xml = '<?xml version="1.0" encoding="utf-8" ?><xmldata>'
-    for code, stock, supplier, vendorsku in products:
+    for product in products:
         xml += "<Products>"
-        xml += "	<ProductCode>%s</ProductCode>" % code
-        xml += "	<StockStatus>%s</StockStatus>" % stock
-        xml += (
-            "	<ProductDescription_AbovePricing>by %s</ProductDescription_AbovePricing>"
-            % supplier
-        )
-        xml += "	<ProductManufacturer>%s</ProductManufacturer>" % supplier
-        xml += "	<Vendor_PartNo>%s</Vendor_PartNo>" % vendorsku
+
+        escapables = ["ProductDescription"]
+        for key in product.keys():
+            content = product[key]
+            if key in escapables:
+                content = escape(product[key])
+            xml += "	<%s>%s</%s>" % (key, content, key)
+
         xml += "</Products>"
+
     xml += "</xmldata>"
-    r = requests.post(stock_api, data=xml, headers=headers)
+
+    r = requests.post(
+        product_update % (VOL_USER, VOL_PASS), data=xml.encode("utf-8"), headers=headers
+    )
+
     if r.status_code != 200:
         raise VolusionError("Server didn't return a 200")
+
     return r

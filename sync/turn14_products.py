@@ -18,7 +18,7 @@ from portal.models import *
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from sync.agent import *
-from sync.host.volusion import update_stock, VolusionError
+from sync.host.volusion import update_products, VolusionError
 
 download_dir = "/mnt/share/"
 pref_url = "https://turn14.com/export_preferences.php"
@@ -103,14 +103,15 @@ if __name__ == "__main__":
                     ps.set_remote_stock(int(row["Stock"]))
                     ps.save()
 
-                    update_stock(
+                    update_products(
                         [
-                            (
-                                ps.product.productid,
-                                ps.remotestock,
-                                "Turn 14",
-                                ps.vendorproductid,
-                            )
+                            {
+                                "ProductCode": ps.product.productid,
+                                "StockStatus": ps.remotestock,
+                                "ProductManufacturer": "Turn 14",
+                                "ProductDescription_AbovePricing": "by Turn 14",
+                                "Vendor_PartNo": ps.vendorproductid,
+                            }
                         ]
                     )
 

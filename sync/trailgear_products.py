@@ -15,7 +15,7 @@ from portal import Logger
 
 logger = Logger("sync.trailgear.stock")
 
-from sync.host.volusion import update_stock
+from sync.host.volusion import update_products
 from datetime import datetime, timedelta
 
 
@@ -76,18 +76,17 @@ def trailgear_products(limit=10):
                     ps.set_remote_stock(data.stock)
                     ps.save()
 
-                    # add to the volusion
-                    update_stock(
+                    update_products(
                         [
-                            (
-                                ps.product.productid,
-                                ps.remotestock,
-                                "Trail-Gear",
-                                ps.vendorproductid,
-                            )
+                            {
+                                "ProductCode": ps.product.productid,
+                                "StockStatus": ps.remotestock,
+                                "ProductManufacturer": "Trail-Gear",
+                                "ProductDescription_AbovePricing": "by Trail-Gear",
+                                "Vendor_PartNo": ps.vendorproductid,
+                            }
                         ]
                     )
-                    # stock_payload.append((ps.product.productid, ps.remotestock, "Trail-Gear", ps.vendorproductid))
 
                 else:
                     logger.warning(

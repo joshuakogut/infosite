@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from portal.models import *
 
-from sync.host.volusion import product_info
+from sync.host.volusion import get_products, update_products
 
 import re
 import requests
@@ -25,7 +25,7 @@ logger = Logger("sync.volusion.prods")
 
 
 def get_volusion_products():
-    infos = product_info()
+    infos = get_products(limit=699)
 
     for prod in infos:
         if "ProductPrice" in prod:
@@ -57,18 +57,16 @@ def translate_volusion_ts(source):
     return "%s-%s-%s %s:%s:%s" % (YYYY, MM, DD, hh, mm, ss)
 
 
-if __name__ == "__main__":
-    # pull the web products
-    # get_volusion_products()
-
+def rewrite_products(limit=99):
     # Locate the ones we want to rewrite
     rewrite_candidates = Volusionproducts.objects.filter(
         Q(productdescription__icontains="lcengineering.com")
         | Q(productdescription__icontains="EPA")
     )
 
-    logger.info("sus products", count=len(rewrite_candidates))
-    for sus in rewrite_candidates:
+    logger.info("found rewrite candidates", count=len(rewrite_candidates))
+
+    for sus in rewrite_candidates[:limit]:
 
         lce = False
         epa = False
@@ -88,7 +86,11 @@ if __name__ == "__main__":
 
         old_link = soup.find(lce_selector)
         if old_link is not None:
-            logger.info("removed lcengineering link from", productid=sus.productcode)
+            logger.info(
+                "removed lcengineering link from",
+                productid=sus.productcode,
+                link=old_link.attrs["href"],
+            )
             old_link.parent.clear()
 
         epa_warning = soup.find(epa_selector)
@@ -98,9 +100,27 @@ if __name__ == "__main__":
 
         if old_link is not None or epa_warning is not None:
             sus.productdescription = str(soup)
-            sus.save()
 
             # Send new description up to volusion
+
+            logger.info("updating", productid=sus.productcode)
+
+            update_products(
+                [
+                    {
+                        "ProductCode": sus.productcode,
+                        "ProductDescription": sus.productdescription,
+                    }
+                ]
+            )
+            sus.save()
+
+
+if __name__ == "__main__":
+    # pull the web products
+    # get_volusion_products()
+
+    rewrite_products(limit=2000)
 
 
 """  _ synchronize _
