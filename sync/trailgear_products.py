@@ -65,15 +65,11 @@ def trailgear_products(limit=10):
                     product = {
                         "ProductCode": ps.product.productid,
                         "StockStatus": ps.remotestock,
+                        "ProductPrice": ps.product.WebPrice,
                         "ProductManufacturer": "Trail-Gear",
                         "ProductDescription_AbovePricing": "by Trail-Gear",
                         "Vendor_PartNo": ps.vendorproductid,
                     }
-
-                    price = ps.product.prices.first()
-                    if price.pricetype == "P":
-                        product["ProductPrice"] = price.price
-
                     update_products([product])
 
                 else:

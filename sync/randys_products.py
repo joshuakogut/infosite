@@ -141,17 +141,15 @@ def scrape_products(products):
                 ps.set_remote_stock(stock)
                 ps.save()
 
-                update_products(
-                    [
-                        {
-                            "ProductCode": ps.product.productid,
-                            "StockStatus": ps.remotestock,
-                            "ProductManufacturer": "Randy's Worldwide",
-                            "ProductDescription_AbovePricing": "by Randy's Worldwide",
-                            "Vendor_PartNo": ps.vendorproductid,
-                        }
-                    ]
-                )
+                product = {
+                    "ProductCode": ps.product.productid,
+                    "StockStatus": ps.remotestock,
+                    "ProductPrice": ps.product.WebPrice,
+                    "ProductManufacturer": "Randy's Worldwide",
+                    "ProductDescription_AbovePricing": "by Randy's Worldwide",
+                    "Vendor_PartNo": ps.vendorproductid,
+                }
+                update_products([product])
             else:
                 logger("I don't know what happened", sku=ps.vendorproductid)
 

@@ -103,17 +103,15 @@ if __name__ == "__main__":
                     ps.set_remote_stock(int(row["Stock"]))
                     ps.save()
 
-                    update_products(
-                        [
-                            {
-                                "ProductCode": ps.product.productid,
-                                "StockStatus": ps.remotestock,
-                                "ProductManufacturer": "Turn 14",
-                                "ProductDescription_AbovePricing": "by Turn 14",
-                                "Vendor_PartNo": ps.vendorproductid,
-                            }
-                        ]
-                    )
+                    product = {
+                        "ProductCode": ps.product.productid,
+                        "StockStatus": ps.remotestock,
+                        "ProductPrice": ps.product.WebPrice,
+                        "ProductManufacturer": "Turn 14",
+                        "ProductDescription_AbovePricing": "by Turn 14",
+                        "Vendor_PartNo": ps.vendorproductid,
+                    }
+                    update_products([product])
 
             except ObjectDoesNotExist:
                 logger.warning(
