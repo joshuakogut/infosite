@@ -20,10 +20,8 @@ import json
 from sync.host.volusion import update_products
 from datetime import datetime, timedelta
 
-HOURS_TILL_EXPIRED = 1
-time_threshold = datetime.now() - timedelta(hours=HOURS_TILL_EXPIRED)
-
 MISSING_TG_CACHE = "missing_tg_skus.json"
+TIME_THRESHOLD = datetime.now() - timedelta(hours=1)
 
 
 def write_missing_products(missing_prods):
@@ -38,7 +36,7 @@ def trailgear_products(limit=10):
         Tbproductsupplier.objects.filter(vendor__name="Trail Gear")
         .exclude(product__discontinued=True)
         .exclude(vendorproductid__isnull=True)
-        .filter(lastsync__lt=time_threshold)
+        .filter(lastsync__lt=TIME_THRESHOLD)
     )
 
     for supply in db.order_by("lastsync"):
@@ -105,7 +103,7 @@ def trailgear_products(limit=10):
             Tbproductsupplier.objects.filter(vendor__name="Trail Gear")
             .exclude(product__discontinued=True)
             .exclude(vendorproductid__isnull=True)
-            .filter(lastsync__lt=time_threshold)
+            .filter(lastsync__lt=TIME_THRESHOLD)
         )
 
         logger.info("products still needing scraped", count=ps.count())
