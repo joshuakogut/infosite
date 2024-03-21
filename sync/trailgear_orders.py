@@ -11,12 +11,12 @@ import tabulate
 from django.utils import timezone
 
 from portal import Logger
+from order.models import *
 
 logger = Logger("sync.trailgear.orders")
 
 import json
 
-from portal.models import *
 from sync.host.trailgear import *
 import uuid
 from tracking_numbers import get_tracking_number
@@ -51,6 +51,8 @@ def trailgear_orders(limit=10):
     return work
 
 
+TG_SKU_CACHE = "missing_tg_skus.json"
+
 if __name__ == "__main__":
 
     # while True:
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     check_login(driver)
 
     try:
-        with open("missing_rpp_skus.txt", "r") as handle:
+        with open(TG_SKU_CACHE, "r") as handle:
             missing_prods = json.load(handle)
             logger.info("loaded missing skus", count=len(missing_prods))
 

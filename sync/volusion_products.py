@@ -9,7 +9,7 @@ django.setup()
 import tabulate
 from django.utils import timezone
 
-from portal.models import *
+from sync.models import Volusionproducts
 
 from sync.host.volusion import get_products, update_products
 

@@ -9,7 +9,7 @@ django.setup()
 import tabulate
 from django.utils import timezone
 from sync.host.trailgear import *
-from portal.models import *
+from product.models import *
 
 from portal import Logger
 
@@ -25,7 +25,7 @@ time_threshold = datetime.now() - timedelta(hours=12)
 def write_missing_products(missing_prods):
     if len(missing_prods) > 0:
         with open("missing_tg_skus.json", "w") as handle:
-            json.dump(missing_prods, handle)
+            json.dump(missing_prods, handle, indent=4)
 
 
 def trailgear_products(limit=10):

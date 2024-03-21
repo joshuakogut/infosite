@@ -13,7 +13,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portal.settings")
 django.setup()
 
 from portal import Logger
-from portal.models import Tbproductsupplier
+from product.models import Tbproductsupplier
 from portal.settings import RPP_USER, RPP_PASS
 from django.utils import timezone
 from sync.agent import Agent
