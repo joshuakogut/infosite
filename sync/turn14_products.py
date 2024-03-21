@@ -82,9 +82,12 @@ if __name__ == "__main__":
             reader = csv.reader(handle, delimiter=',', quotechar='"')
             next(reader)"""
 
-        t14_prods = Tbproductsupplier.objects.filter(
-            vendor__name="Turn 14 Distribution"
-        ).exclude(product__productid__iendswith="-old")
+        t14_prods = (
+            Tbproductsupplier.objects.filter(vendor__name="Turn 14 Distribution")
+            .filter(product__availonweb=True)
+            .exclude(product__productid__iendswith="-old")
+            .exclude(product__productid="9560002")
+        )
         active_skus = set(
             [d["vendorproductid"] for d in t14_prods.values("vendorproductid")]
         )
