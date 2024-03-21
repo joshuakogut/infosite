@@ -1026,7 +1026,7 @@ class Tbpodetail(models.Model):
         db_column="DisplayPrice", max_digits=19, decimal_places=7, blank=True, null=True
     )
     product = models.ForeignKey(
-        Tbproduct, on_delete=models.PROTECT, db_column="GUIDProduct"
+        "Tbproduct", on_delete=models.PROTECT, db_column="GUIDProduct"
     )
     productid = models.CharField(
         db_column="ProductID",
@@ -1437,7 +1437,7 @@ class Tbcustomer(models.Model):
 
 class Productwarehousesummary(models.Model):
     productwarehouse = models.OneToOneField(
-        Tbproductwarehouse,
+        "Tbproductwarehouse",
         on_delete=models.PROTECT,
         db_column="GUIDProductWarehouse",
         primary_key=True,

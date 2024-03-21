@@ -512,7 +512,7 @@ class Tbproductsupplier(models.Model):
     lastsync = models.DateTimeField(db_column="LastSync", blank=True, null=True)
     remoteid = models.CharField(
         db_column="RemoteID",
-        max_length=50,
+        max_length=250,
         db_collation="SQL_Latin1_General_CP1_CI_AS",
         blank=True,
         null=True,

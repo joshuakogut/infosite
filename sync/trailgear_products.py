@@ -8,23 +8,27 @@ django.setup()
 
 import tabulate
 from django.utils import timezone
-from sync.host.trailgear import *
+from sync.host.trailgear import refresh_product_info
 from product.models import *
 
 from portal import Logger
 
 logger = Logger("sync.trailgear.stock")
 
+from sync.agent import Agent
+import json
 from sync.host.volusion import update_products
 from datetime import datetime, timedelta
 
+HOURS_TILL_EXPIRED = 1
+time_threshold = datetime.now() - timedelta(hours=HOURS_TILL_EXPIRED)
 
-time_threshold = datetime.now() - timedelta(hours=12)
+MISSING_TG_CACHE = "missing_tg_skus.json"
 
 
 def write_missing_products(missing_prods):
     if len(missing_prods) > 0:
-        with open("missing_tg_skus.json", "w") as handle:
+        with open(MISSING_TG_CACHE, "w") as handle:
             json.dump(missing_prods, handle, indent=4)
 
 
@@ -48,7 +52,7 @@ def trailgear_products(limit=10):
 
     driver = Agent(headless=False)
 
-    with open("missing_tg_skus.json", "r") as handle:
+    with open(MISSING_TG_CACHE, "r") as handle:
         missing_prods = json.load(handle)
         logger.info("loaded missing skus", count=len(missing_prods))
 
@@ -57,7 +61,9 @@ def trailgear_products(limit=10):
         for ps in work:
             # print("Scraping %s\t%s" % (ps.product.productid,ps.vendorproductid))
             if ps.vendorproductid.strip().lower() not in [k[2] for k in missing_prods]:
-                data = search_sku(driver, ps.vendorproductid)
+                if not ps.remoteid:
+                    pass
+                data = refresh_product_info(driver, ps)
                 if data:
                     ps.set_remote_stock(data.stock)
                     ps.save()

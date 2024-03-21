@@ -39,55 +39,83 @@ class ScrapedOrder:
         return "<ScrapedOrder %s>" % (self.ponumber)
 
 
-def search_sku(driver, sku):
-    logger.debug(search_sku=sku)
+def refresh_product_info(driver, ps):
+    logger.debug("refresh product info", sku=ps.vendorproductid)
+    if ps.remoteid != None:
+        driver.get(ps.remoteid)
+        return scrape_product(driver)
 
-    driver.get(search_url % sku)
+    else:
+        return search_for_product(driver, ps)
+
+
+def scrape_product(driver):
+    """This assumes you are already on the product page"""
+    esku = driver.find_element("xpath", '//div[@itemprop="sku"]')
+    name = (driver.find_element("xpath", '//h1[@class="page-title"]').text,)
+    price = driver.find_element("xpath", '//span[@data-price-type="finalPrice"]').text
+
+    stock = "0 IN STOCK"
+    search = driver.find_elements(
+        "xpath",
+        '//div[@class="amstockstatus-status-container stock available"]',
+    )
+    if len(search) > 0:
+        stock = search[0].text
+    try:
+        match = re.findall(r"([0-9]+)", stock)
+        if len(match) > 0:
+            stock = int(match[0])
+        else:
+            stock = 0
+    except IndexError:
+        logger.error("fix this, probably 'limited stock' on %s" % esku)
+        stock = 0
+
+    return ScrapedProduct(esku.text, name, price, stock)
+
+
+def search_for_product(driver, ps):
+    """Finds a trailgear product page and stores it in ps.remoteid"""
+    driver.get(search_url % ps.vendorproductid)
+
     sel = driver.find_elements("xpath", '//a[@class="product-item-link"]')
     uris = [el.get_attribute("href") for el in sel]
     for uri in uris:
         driver.get(uri)
         esku = driver.find_element("xpath", '//div[@itemprop="sku"]')
-        if esku.text.lower() == sku.lower():
-            name = (driver.find_element("xpath", '//h1[@class="page-title"]').text,)
-            price = driver.find_element(
-                "xpath", '//span[@data-price-type="finalPrice"]'
-            ).text
+        if esku.text.lower() == ps.vendorproductid.lower():
+            # Found the right product page
+            logger.info("identified new product url", sku=ps.vendorproductid, uri=uri)
+            ps.remoteid = uri
+            ps.save()
 
-            stock = "0 IN STOCK"
-            search = driver.find_elements(
-                "xpath",
-                '//div[@class="amstockstatus-status-container stock available"]',
-            )
-            if len(search) > 0:
-                stock = search[0].text
-            try:
-                match = re.findall(r"([0-9]+)", stock)
-                if len(match) > 0:
-                    stock = int(match[0])
-                else:
-                    stock = 0
-            except IndexError:
-                logger.error("fix this, probably 'limited stock' on %s" % esku)
-                stock = 0
+            return scrape_product(driver)
 
-            return ScrapedProduct(esku.text, name, price, stock)
     return None
 
 
+def clear_popup(d):
+    """Click all the consent buttons, idgaf"""
+    try:
+        # Clear cookie popup
+        [
+            e.click()
+            for e in d.find_elements(
+                "xpath", '//*[@class="btn-cookie btn-cookie-accept"]'
+            )
+        ]
+    except Exception:
+        pass
+
+
 def check_login(driver):
+    """"""
     loggedin = driver.find_elements("xpath", '//*[@class="logged-in"]')
     if len(loggedin) > 0:
         return True
 
-    try:
-        # Clear cookie popup
-        els = driver.find_elements(
-            "xpath", '//*[@class="btn-cookie btn-cookie-accept"]'
-        )
-        [e.click() for e in els]
-    except Exception:
-        pass
+    clear_popup(driver)
 
     uname = driver.find_elements("name", "login[username]")
     passw = driver.find_elements("name", "login[password]")
