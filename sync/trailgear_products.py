@@ -8,7 +8,7 @@ django.setup()
 
 import tabulate
 from django.utils import timezone
-from sync.host.trailgear import refresh_product_info
+from sync.host import trailgear
 from product.models import *
 
 from portal import Logger
@@ -17,7 +17,7 @@ logger = Logger("sync.trailgear.stock")
 
 from sync.agent import Agent
 import json
-from sync.host.volusion import update_products
+from sync.host import volusion
 from datetime import datetime, timedelta
 
 MISSING_TG_CACHE = "missing_tg_skus.json"
@@ -30,99 +30,71 @@ def write_missing_products(missing_prods):
             json.dump(missing_prods, handle, indent=4)
 
 
-def trailgear_products(limit=10):
-    prods = []
-    db = (
+def trailgear_products():
+    ps = (
         Tbproductsupplier.objects.filter(vendor__name="Trail Gear")
+        .filter(preferred=True)
         .exclude(product__discontinued=True)
         .exclude(vendorproductid__isnull=True)
         .filter(lastsync__lt=TIME_THRESHOLD)
+        .order_by("lastsync")
     )
 
-    for supply in db.order_by("lastsync"):
-        if supply.vendorproductid != None and supply.vendorproductid.strip() != "":
-            try:
-                prods.append(supply)
-            except Tbproduct.DoesNotExist:
-                pass
+    logger.info("productsupplier where vendor = tg", count=ps.count())
+    return ps
 
-    work = prods[:limit]
+
+def discover_products(work):
+    inp = input("wanna lookup old ones? y/N> ").lower()
+    if inp.startswith("y"):
+        driver = Agent(headless=False)
+        for ps in work:
+            data = trailgear.search_for_product(driver, ps)
+            if data:
+                ps.set_remote_stock(data.stock)
+                ps.save()
+
+                upload_product_info(ps)
+
+            else:
+                logger.error(
+                    "sync.host.trailgear.search_for_product failed to return anything",
+                    id=ps.vendorproductid,
+                )
+
+
+def scrape_products(work):
 
     driver = Agent(headless=False)
 
-    with open(MISSING_TG_CACHE, "r") as handle:
-        missing_prods = json.load(handle)
-        logger.info("loaded missing skus", count=len(missing_prods))
+    for ps in work:
+        data = trailgear.scrape_product(driver, uri=ps.remoteid)
+        if data:
+            ps.set_remote_stock(data.stock)
+            ps.save()
 
-    try:
-        stock_payload = []
-        for ps in work:
-            # print("Scraping %s\t%s" % (ps.product.productid,ps.vendorproductid))
-            if ps.vendorproductid.strip().lower() not in [k[2] for k in missing_prods]:
-                if not ps.remoteid:
-                    pass
-                data = refresh_product_info(driver, ps)
-                if data:
-                    ps.set_remote_stock(data.stock)
-                    ps.save()
+            upload_product_info(ps)
+    logger.info("products still needing scraped", count=work.count())
 
-                    product = {
-                        "ProductCode": ps.product.productid,
-                        "StockStatus": ps.remotestock,
-                        "ProductPrice": ps.product.WebPrice,
-                        "ProductManufacturer": "Trail-Gear",
-                        "ProductDescription_AbovePricing": "by Trail-Gear",
-                        "Vendor_PartNo": ps.vendorproductid,
-                    }
-                    update_products([product])
 
-                else:
-                    logger.warning(
-                        "Could not find part, adding to missing_skus",
-                        product=ps.product.productid,
-                        vendorproductid=ps.vendorproductid,
-                    )
-                    missing_prods.append(
-                        (
-                            ps.product.productid,
-                            ps.product.description,
-                            ps.vendorproductid.strip().lower(),
-                        )
-                    )
-                    write_missing_products(missing_prods)
-            else:
-                logger.info(
-                    "Skipped missing sku",
-                    productid=ps.product.productid,
-                    vendorproductid=ps.vendorproductid,
-                )
-                ps.lastsync = timezone.now()
-                ps.save()
-
-        ps = (
-            Tbproductsupplier.objects.filter(vendor__name="Trail Gear")
-            .exclude(product__discontinued=True)
-            .exclude(vendorproductid__isnull=True)
-            .filter(lastsync__lt=TIME_THRESHOLD)
-        )
-
-        logger.info("products still needing scraped", count=ps.count())
-
-    finally:
-
-        driver.quit()
-
-        """if len(stock_payload) > 0:
-            print("Sending stock for %s products to volusion" % len(stock_payload))
-            response = update_stock( stock_payload )
-            if response.ok:
-                print("Success")
-            else:
-                print("fail")
-                """
-
-        write_missing_products(missing_prods)
+def upload_product_info(ps):
+    product = {
+        "ProductCode": ps.product.productid,
+        "StockStatus": ps.remotestock,
+        "ProductPrice": ps.product.WebPrice,
+        "ProductManufacturer": "Trail-Gear",
+        "ProductDescription_AbovePricing": "by Trail-Gear",
+        "Vendor_PartNo": ps.vendorproductid,
+    }
+    volusion.update_products([product])
 
 
 if __name__ == "__main__":
-    trailgear_products(limit=900)
+
+    products = trailgear_products()
+
+    unknown = products.filter(remoteid__isnull=True)
+    discover_products(unknown)
+
+    known = products.filter(remoteid__isnull=False)
+    scrape_products(known)

@@ -16,10 +16,14 @@ urllibLogger.setLevel(logging.WARNING)
 
 
 class Agent(webdriver.Remote):
-    def __init__(self, browser="chrome", headless=False, remote_url=None):
+    def __init__(
+        self, browser="chrome", headless=False, remote_url=None, cookie="generic"
+    ):
         """
         Initializes the Agent with specified browser, headless mode, and remote URL.
         """
+        self.cookies_namespace = cookie
+
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.WARNING)
 
@@ -76,10 +80,11 @@ class Agent(webdriver.Remote):
         except Exception as e:
             self.logger.error("Error waiting for AJAX:", exc_info=True)
 
-    def load_cookies(self, cookie_file="cookies.json"):
+    def load_cookies(self):
         """
         Loads cookies from a file and adds them to the browser session.
         """
+        cookie_file = "cookies/%s.json" % self.cookies_namespace
         self.logger.info("Loading cookies from: %s", cookie_file)
         try:
             with open(cookie_file, "r") as handle:
@@ -96,10 +101,11 @@ class Agent(webdriver.Remote):
         except Exception as e:
             self.logger.error("Error loading cookies:", exc_info=True)
 
-    def store_cookies(self, cookie_file="cookies.json"):
+    def store_cookies(self):
         """
         Saves the current browser cookies to a file.
         """
+        cookie_file = "cookies/%s.json" % self.cookies_namespace
         self.logger.info("Saving cookies to: %s", cookie_file)
         with open(cookie_file, "w") as handle:
             json.dump(self.get_cookies(), handle)

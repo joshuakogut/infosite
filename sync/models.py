@@ -1,4 +1,4 @@
-from portal.models import *
+from product.models import *
 
 
 class Volusionproducts(models.Model):
@@ -44,6 +44,8 @@ class Volusionproducts(models.Model):
         null=True,
     )
     lastmodified = models.DateTimeField(db_column="LastModified", blank=True, null=True)
+
+    last_sync = models.DateTimeField(db_column="LastSync", blank=True, null=True)
 
     class Meta:
         managed = False

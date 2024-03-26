@@ -49,8 +49,12 @@ def refresh_product_info(driver, ps):
         return search_for_product(driver, ps)
 
 
-def scrape_product(driver):
-    """This assumes you are already on the product page"""
+def scrape_product(driver, uri=None):
+    """This assumes you are already on the product page if uri=None"""
+
+    if uri is not None:
+        driver.get(uri)
+
     esku = driver.find_element("xpath", '//div[@itemprop="sku"]')
     name = (driver.find_element("xpath", '//h1[@class="page-title"]').text,)
     price = driver.find_element("xpath", '//span[@data-price-type="finalPrice"]').text

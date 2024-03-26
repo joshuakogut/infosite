@@ -14,7 +14,7 @@ from portal import Logger
 
 logger = Logger("sync.host.turn14")
 
-from portal.models import *
+from product.models import *
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from sync.agent import *
@@ -78,10 +78,6 @@ if __name__ == "__main__":
                     break
             break
 
-        """with open('/tmp/turn14.csv') as handle:
-            reader = csv.reader(handle, delimiter=',', quotechar='"')
-            next(reader)"""
-
         t14_prods = (
             Tbproductsupplier.objects.filter(vendor__name="Turn 14 Distribution")
             .filter(product__availonweb=True)
@@ -89,15 +85,15 @@ if __name__ == "__main__":
             .exclude(product__productid="9560002")
         )
         active_skus = set(
-            [d["vendorproductid"] for d in t14_prods.values("vendorproductid")]
+            [d["vendorproductid"].lower() for d in t14_prods.values("vendorproductid")]
         )
 
         df = pd.read_csv(download_dir + "turn14.csv")
         for index, row in df.iterrows():
             try:
                 if (
-                    row["InternalPartNumber"] in active_skus
-                    or row["PartNumber"] in active_skus
+                    row["InternalPartNumber"].lower() in active_skus
+                    or row["PartNumber"].lower() in active_skus
                 ):
                     ps = t14_prods.get(
                         Q(vendorproductid=row["InternalPartNumber"])
@@ -118,13 +114,13 @@ if __name__ == "__main__":
 
             except ObjectDoesNotExist:
                 logger.warning(
-                    "does not exist",
+                    "Does not exist",
                     vendorproductid=row[0],
                     other=row[1],
                 )
             except MultipleObjectsReturned:
                 logger.warning(
-                    "fucked up, multiple supplier results",
+                    "Fucked up, multiple supplier results",
                     vendorproductid=row[0],
                     matches=[
                         ps.product.productid

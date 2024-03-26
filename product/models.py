@@ -330,11 +330,26 @@ class Tbproduct(models.Model):
 
     @property
     def WebPrice(self):
+        """Generates a price to upload to our web store"""
         price = 0
         for p in self.prices.all():
             if p.FinalPrice > price:
                 price = p.FinalPrice
         return price
+
+    @property
+    def WebStock(self):
+        """Generates a stock number to upload to our web store"""
+        stock = 0
+
+        for wh in self.warehouses.all():
+            if wh.summary.available and wh.summary.available > 0:
+                stock += wh.summary.available
+        if stock == 0:
+            for ps in self.suppliers.filter(remotestock__gt=0):
+                stock += ps.remotestock
+
+        return stock
 
     class Meta:
         managed = False
@@ -637,3 +652,217 @@ class Tbproductprice(models.Model):
     class Meta:
         managed = False
         db_table = "tbproductprice"
+
+
+class Productwarehousesummary(models.Model):
+    productwarehouse = models.OneToOneField(
+        "Tbproductwarehouse",
+        on_delete=models.PROTECT,
+        db_column="GUIDProductWarehouse",
+        primary_key=True,
+        related_name="summary",
+    )
+
+    guidproduct = models.CharField(db_column="GUIDProduct", max_length=36)
+    guidwarehouse = models.CharField(
+        db_column="GUIDWarehouse", max_length=36, blank=True, null=True
+    )
+    warehouse = models.CharField(
+        db_column="Warehouse", max_length=6, blank=True, null=True
+    )
+    warehousedescription = models.CharField(
+        db_column="WarehouseDescription", max_length=50, blank=True, null=True
+    )
+    productid = models.CharField(db_column="ProductID", max_length=159)
+    qtyreserved = models.DecimalField(
+        db_column="QtyReserved", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    guidwhlocation = models.CharField(
+        db_column="GUIDWHLocation", max_length=36, blank=True, null=True
+    )
+    location = models.CharField(
+        db_column="Location", max_length=80, blank=True, null=True
+    )
+    primarylocationstockinglevel = models.DecimalField(
+        db_column="PrimaryLocationStockingLevel",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    lastcost = models.DecimalField(
+        db_column="LastCost", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    mgmtcost = models.DecimalField(
+        db_column="MgmtCost", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    standardcost = models.DecimalField(
+        db_column="StandardCost", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    reorderpoint = models.DecimalField(
+        db_column="ReorderPoint", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    stockinglevel = models.DecimalField(
+        db_column="StockingLevel",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    qtytoreorder = models.DecimalField(
+        db_column="QtyToReorder", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    lastcountdate = models.DateTimeField(
+        db_column="LastCountDate", blank=True, null=True
+    )
+    note = models.TextField(db_column="Note", blank=True, null=True)
+    qtyonhand = models.DecimalField(
+        db_column="QtyOnHand", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    onhandvalue = models.DecimalField(
+        db_column="OnHandValue", max_digits=19, decimal_places=4, blank=True, null=True
+    )
+    avgcost = models.DecimalField(
+        db_column="AvgCost", max_digits=38, decimal_places=16, blank=True, null=True
+    )
+    quantityonpo = models.DecimalField(
+        db_column="QuantityOnPO", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    quantityonreturn = models.DecimalField(
+        db_column="QuantityOnReturn",
+        max_digits=38,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    quantityonorder = models.DecimalField(
+        db_column="QuantityOnOrder",
+        max_digits=38,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    amountonorder = models.DecimalField(
+        db_column="AmountOnOrder",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    qtyordered = models.DecimalField(
+        db_column="QtyOrdered", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    qtybooked = models.DecimalField(
+        db_column="QtyBooked", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    qtyscheduled = models.DecimalField(
+        db_column="QtyScheduled", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    qtybackordered = models.DecimalField(
+        db_column="QtyBackordered",
+        max_digits=38,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    qtyspecialorder = models.DecimalField(
+        db_column="QtySpecialOrder",
+        max_digits=38,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    unpostedcomponentquantity = models.DecimalField(
+        db_column="UnpostedComponentQuantity",
+        max_digits=38,
+        decimal_places=13,
+        blank=True,
+        null=True,
+    )
+    unpostedassemblyquantity = models.DecimalField(
+        db_column="UnpostedAssemblyQuantity",
+        max_digits=38,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    unpostedtransferquantity = models.DecimalField(
+        db_column="UnpostedTransferQuantity",
+        max_digits=38,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    qtyorderedamount = models.DecimalField(
+        db_column="QtyOrderedAmount",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    qtyschedamount = models.DecimalField(
+        db_column="QtySchedAmount",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    allocated = models.DecimalField(
+        db_column="Allocated", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    available = models.DecimalField(
+        db_column="Available", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    lasttransactiondate = models.DateTimeField(
+        db_column="LastTransactionDate", blank=True, null=True
+    )
+    qtyrequired = models.DecimalField(
+        db_column="QtyRequired", max_digits=38, decimal_places=7, blank=True, null=True
+    )
+    stdcost = models.DecimalField(
+        db_column="StdCost", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    producttype = models.CharField(
+        db_column="ProductType", max_length=8, blank=True, null=True
+    )
+    salescategory = models.CharField(
+        db_column="SalesCategory", max_length=8, blank=True, null=True
+    )
+    description = models.CharField(
+        db_column="Description", max_length=4095, blank=True, null=True
+    )
+    unit = models.CharField(db_column="Unit", max_length=5, blank=True, null=True)
+    productclassid = models.CharField(
+        db_column="ProductClassID", max_length=8, blank=True, null=True
+    )
+    productclassdescription = models.CharField(
+        db_column="ProductClassDescription", max_length=50, blank=True, null=True
+    )
+    expectedreceiptdate = models.DateTimeField(
+        db_column="ExpectedReceiptDate", blank=True, null=True
+    )
+    reorderincludeinpo = models.BooleanField(db_column="ReorderIncludeInPO")
+    reorderguidvendor = models.CharField(
+        db_column="ReorderGUIDVendor", max_length=36, blank=True, null=True
+    )
+    reorderunit = models.CharField(
+        db_column="ReorderUnit", max_length=5, blank=True, null=True
+    )
+    reordercost = models.DecimalField(
+        db_column="ReorderCost", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    reorderqty = models.DecimalField(
+        db_column="ReorderQty", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    reordervendorproductid = models.CharField(
+        db_column="ReorderVendorProductID", max_length=25, blank=True, null=True
+    )
+    buildqty = models.DecimalField(
+        db_column="BuildQty", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    buildchecked = models.BooleanField(db_column="BuildChecked")
+    deleted = models.BooleanField(db_column="Deleted")
+
+    class Meta:
+        managed = False
+        db_table = "productwarehousesummary"

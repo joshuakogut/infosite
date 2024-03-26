@@ -9,7 +9,7 @@ django.setup()
 import tabulate
 from django.utils import timezone
 
-from sync.models import Volusionproducts
+from sync.models import Volusionproducts,Tbproduct
 
 from sync.host.volusion import get_products, update_products
 
@@ -118,20 +118,22 @@ def rewrite_products(limit=99):
 
 if __name__ == "__main__":
     # pull the web products
+    logger.info('INSTRUCTIONS: Go clear out the product sync history in volusion.')
+    input('continue >')
+
     get_volusion_products()
 
-# rewrite_products(limit=2000)
+
+    # synchronize available info
+    available = ( Tbproduct.objects
+        .filter(availonweb=True)
+        .filter(product__discontinued=False)
+        .order_by('-updateddate')
+    )
+    for product,i in available[:10]:
+        logger.info(index=i,val=[product.productid, product.description, product.WebPrice, product)
 
 
-"""  _ synchronize _
- ___| |_ ___   ___| | __
-/ __| __/ _ \ / __| |/ /
-\__ \ || (_) | (__|   <
-|___/\__\___/ \___|_|\_\ """
-
-# available = Productwarehousesummary.objects.filter(product__availonweb=True).filter(
-#     warehouse
-# )
 
 """        _               
 _ __  _ __(_) ___ ___  ___ 

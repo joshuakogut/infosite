@@ -31,26 +31,16 @@ search_url = "https://www.randysworldwide.com/shop/?q=%s"
 def rpp_products():
     ps = (
         Tbproductsupplier.objects.filter(vendor__name="Randy's Ring & Pinion")
+        .filter(preferred=True)
         .exclude(product__discontinued=True)
         .exclude(vendorproductid__isnull=True)
         .exclude(vendorproductid__contains="LC")
         .order_by("lastsync")
     )
 
-    res = ps.count()
-    print("results: %s" % res)
+    logger.info("productsupplier where vendor = randys", count=ps.count())
 
-    return ps.order_by("lastsync")
-
-
-def triage_products():
-    products = rpp_products()
-
-    unknown = products.filter(remoteid__isnull=True)
-    known = products.filter(remoteid__isnull=False)
-
-    discover_products(unknown)
-    scrape_products(known)
+    return ps
 
 
 def discover_products(products):
@@ -63,7 +53,7 @@ def discover_products(products):
                 logger.debug(
                     "Finding remoteid for",
                     productid=ps.product.productid,
-                    desc=ps.product.description,
+                    sku=ps.vendorproductid,
                 )
 
                 driver.get(search_url % ps.vendorproductid)
@@ -78,18 +68,15 @@ def discover_products(products):
                         btn = p.find_elements("xpath", "//a")
                         if len(sku) > 0:
                             if sku[0].text.lower() == ps.vendorproductid.lower():
-                                remoteid = (
-                                    p.find_element("xpath", "div[2]/div[1]/form/a")
-                                    .get_attribute("href")
-                                    .split("/")
-                                    .pop()
-                                )
+                                remoteid = p.find_element(
+                                    "xpath", "div[2]/div[1]/form/a"
+                                ).get_attribute("href")
                                 ps.remoteid = remoteid
                                 ps.save()
 
                                 logger.info(
                                     "found new remoteid",
-                                    remoteid=remoteid,
+                                    remoteid=remoteid.split("/").pop(),
                                     ps=ps.vendorproductid,
                                     id=ps.product.productid,
                                 )
@@ -103,55 +90,60 @@ def discover_products(products):
 
 def scrape_products(products):
     driver = Agent(headless=False)
-    try:
 
-        for ps in products:
+    for ps in products:
 
-            driver.get(producturl % ps.remoteid)
+        driver.get(ps.remoteid)
 
-            sort = driver.find_elements("xpath", '//div[@class="sort__group"]')
-            prod = driver.find_elements("xpath", '//div[@class="prod_wrapper"]')
-            if len(sort) == 1:
-                # listing page, not an exact match
-                logger.error(
-                    "invalid remote id",
-                    sku=ps.vendorproductid,
-                    productid=ps.product.productid,
-                    remoteid=ps.remoteid,
-                )
-                ps.remoteid = None
-                ps.save()
-            elif len(prod) == 1:
-                stock = 0
-                stocks = driver.find_elements(
-                    "xpath", '//span[@class="warehouse-availability__stock"]'
-                )
-                for st in stocks:
-                    try:
-                        stock += int(st.text)
-                    except:
-                        pass
+        sort = driver.find_elements("xpath", '//div[@class="sort__group"]')
+        prod = driver.find_elements("xpath", '//div[@class="prod_wrapper"]')
+        if len(sort) == 1:
+            # listing page, not an exact match
+            logger.error(
+                "invalid remote id",
+                sku=ps.vendorproductid,
+                productid=ps.product.productid,
+                remoteid=ps.remoteid,
+            )
+            ps.remoteid = None
+            ps.save()
+        elif len(prod) == 1:
+            stock = 0
+            stocks = driver.find_elements(
+                "xpath", '//span[@class="warehouse-availability__stock"]'
+            )
+            for st in stocks:
+                try:
+                    stock += int(st.text)
+                except:
+                    pass
 
-                ps.set_remote_stock(stock)
-                ps.save()
+            ps.set_remote_stock(stock)
+            ps.save()
 
-                product = {
-                    "ProductCode": ps.product.productid,
-                    "StockStatus": ps.remotestock,
-                    "ProductPrice": ps.product.WebPrice,
-                    "ProductManufacturer": "Randy's Worldwide",
-                    "ProductDescription_AbovePricing": "by Randy's Worldwide",
-                    "Vendor_PartNo": ps.vendorproductid,
-                }
-                update_products([product])
-            else:
-                logger("I don't know what happened", sku=ps.vendorproductid)
-
-    finally:
-        driver.quit()
+            product = {
+                "ProductCode": ps.product.productid,
+                "StockStatus": ps.remotestock,
+                "ProductPrice": ps.product.WebPrice,
+                "ProductManufacturer": "Randy's Worldwide",
+                "ProductDescription_AbovePricing": "by Randy's Worldwide",
+                "Vendor_PartNo": ps.vendorproductid,
+            }
+            update_products([product])
+        else:
+            logger("I don't know what happened", sku=ps.vendorproductid)
 
 
 import datetime
 
 if __name__ == "__main__":
-    triage_products()
+
+    products = rpp_products()
+    for ps in products:
+        logger.info(a=ps.product.productid, b=ps.remoteid)
+
+    unknown = products.filter(remoteid__isnull=True)
+    discover_products(unknown)
+
+    known = products.filter(remoteid__isnull=False)
+    scrape_products(known)
