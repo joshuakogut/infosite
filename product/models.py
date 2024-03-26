@@ -663,7 +663,13 @@ class Productwarehousesummary(models.Model):
         related_name="summary",
     )
 
-    guidproduct = models.CharField(db_column="GUIDProduct", max_length=36)
+    product = models.ForeignKey(
+        Tbproduct,
+        on_delete=models.PROTECT,
+        db_column="GUIDProduct",
+        related_name="whsummaries",
+    )
+
     guidwarehouse = models.CharField(
         db_column="GUIDWarehouse", max_length=36, blank=True, null=True
     )
