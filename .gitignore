@@ -1,3 +1,4 @@
 *.pyc
 cookies.json
 portal/dev_settings.py
+.vscode
