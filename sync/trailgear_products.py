@@ -88,6 +88,7 @@ def upload_product_info(ps):
     }
     volusion.update_products([product])
 
+def wipe_remotestock()
 
 if __name__ == "__main__":
 

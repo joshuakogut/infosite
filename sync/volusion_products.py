@@ -9,7 +9,7 @@ django.setup()
 import tabulate
 from django.utils import timezone
 
-from sync.models import Volusionproducts,Tbproduct
+from sync.models import Volusionproducts, Tbproduct
 
 from sync.host.volusion import get_products, update_products
 
@@ -39,6 +39,20 @@ def get_volusion_products():
             vp, created = Volusionproducts.objects.update_or_create(
                 productcode=prod["ProductCode"], defaults=defs
             )
+            ap = Tbproduct.objects.get(productid=prod["ProductCode"])
+            aprices = ap.prices.filter(pricetype="P")
+            if aprices.count() > 0:
+                p = aprices.first()
+                if prod["ProductPrice"] > p.price:
+                    logger.info(
+                        "Raising local price",
+                        id=prod["ProductCode"],
+                        newprice=prod["ProductPrice"],
+                        oldprice=p.price,
+                    )
+                    # p.price = prod['ProductPrice']
+                    # p.save()
+
             print("set %s" % prod["ProductCode"])
 
     print("recorded %s products" % len(infos))
@@ -118,21 +132,32 @@ def rewrite_products(limit=99):
 
 if __name__ == "__main__":
     # pull the web products
-    logger.info('INSTRUCTIONS: Go clear out the product sync history in volusion.')
-    input('continue >')
+    logger.info("INSTRUCTIONS: Go clear out the product sync history in volusion.")
+    # input("continue >")
 
     get_volusion_products()
 
-
     # synchronize available info
-    available = ( Tbproduct.objects
-        .filter(availonweb=True)
-        .filter(product__discontinued=False)
-        .order_by('-updateddate')
+    available = (
+        Tbproduct.objects.filter(availonweb=True)
+        .filter(discontinued=False)
+        .order_by("-updateddate")[:100]
     )
-    for product,i in available[:10]:
-        logger.info(index=i,val=[product.productid, product.description, product.WebPrice, product)
-
+    for product in available:
+        try:
+            vp = Volusionproducts.objects.get(productcode=product.productid)
+            logger.info(
+                id=product.productid,
+                desc=product.description,
+                webprice="%.2f" % vp.productprice,
+                updateprice="%.2f" % product.WebPrice,
+            )
+        except Exception as e:
+            logger.error(
+                "no matching volusion product",
+                code=product.productid,
+                desc=product.description,
+            )
 
 
 """        _               

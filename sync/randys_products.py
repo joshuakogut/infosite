@@ -139,11 +139,11 @@ import datetime
 if __name__ == "__main__":
 
     products = rpp_products()
-    for ps in products:
-        logger.info(a=ps.product.productid, b=ps.remoteid)
 
     unknown = products.filter(remoteid__isnull=True)
     discover_products(unknown)
 
     known = products.filter(remoteid__isnull=False)
+    for ps in known:
+        logger.info(a=ps.product.productid, b=ps.remoteid)
     scrape_products(known)

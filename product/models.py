@@ -333,8 +333,10 @@ class Tbproduct(models.Model):
         """Generates a price to upload to our web store"""
         price = 0
         for p in self.prices.all():
-            if p.FinalPrice > price:
-                price = p.FinalPrice
+            finalprice = p.FinalPrice
+
+            if finalprice and finalprice > price:
+                price = finalprice
         return price
 
     @property
@@ -633,7 +635,13 @@ class Tbproductprice(models.Model):
         elif self.pricetype == "C%":
             # avg cost + %
             base = self.product.avgcost
-            hike = (self.product.avgcost * self.price) / 100
+            if not base:
+                try:
+                    pps = self.product.suppliers.get(preferred=True)
+                    base = max(pps.vendorprice, pps.lastprice)
+                except Exception as e:
+                    pass
+            hike = (base * self.price) / 100
             return base + hike
         elif self.pricetype == "S%":
             # mgmt cost + %
