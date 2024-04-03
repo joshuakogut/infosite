@@ -36,24 +36,32 @@ def get_volusion_products():
                 if k.lower() in Volusionproducts.__dict__.keys()
             }
             defs["lastmodified"] = translate_volusion_ts(prod["LastModified"])
-            vp, created = Volusionproducts.objects.update_or_create(
-                productcode=prod["ProductCode"], defaults=defs
-            )
-            ap = Tbproduct.objects.get(productid=prod["ProductCode"])
-            aprices = ap.prices.filter(pricetype="P")
-            if aprices.count() > 0:
-                p = aprices.first()
-                if prod["ProductPrice"] > p.price:
-                    logger.info(
-                        "Raising local price",
-                        id=prod["ProductCode"],
-                        newprice=prod["ProductPrice"],
-                        oldprice=p.price,
-                    )
-                    # p.price = prod['ProductPrice']
-                    # p.save()
 
-            print("set %s" % prod["ProductCode"])
+            # If we have a matching local product
+            if Tbproduct.objects.filter(productid=prod["ProductCode"]).count() > 0:
+                ap = Tbproduct.objects.get(productid=prod["ProductCode"])
+                aprices = ap.prices.filter(pricetype="P")
+
+                if aprices.count() > 0:
+                    p = aprices.first()
+                    volprice = float(prod["ProductPrice"])
+                    if p.price and volprice > float(p.price):
+                        logger.info(
+                            "Raising local price",
+                            id=prod["ProductCode"],
+                            newprice=prod["ProductPrice"],
+                            oldprice=float(p.price),
+                        )
+                        p.price = prod["ProductPrice"]
+                        p.save()
+
+                vp, created = Volusionproducts.objects.update_or_create(
+                    product=ap, defaults=defs
+                )
+
+                logger.info("set %s" % prod["ProductCode"], lastmodby=prod["LastModBy"])
+            else:
+                logger.info
 
     print("recorded %s products" % len(infos))
 
@@ -140,24 +148,35 @@ if __name__ == "__main__":
     # synchronize available info
     available = (
         Tbproduct.objects.filter(availonweb=True)
-        .filter(discontinued=False)
-        .order_by("-updateddate")[:100]
+        .filter(status=1)  # must be active
+        .filter(discontinued=False)  # Make sure we're buying/producing it
+        .exclude(assemblytype="K")  # Ignore kits, that shit is complicated
+        .exclude(webproduct__isnull=True)  # need a matching entry reported by volusion
+        .order_by("-updateddate")  # most recently updated in acctivate
     )
-    for product in available:
-        try:
-            vp = Volusionproducts.objects.get(productcode=product.productid)
-            logger.info(
-                id=product.productid,
-                desc=product.description,
-                webprice="%.2f" % vp.productprice,
-                updateprice="%.2f" % product.WebPrice,
+    for product in available[:200]:
+        current_price = product.webproduct.productprice
+        proposed_price = product.WebPrice
+        price_difference = proposed_price - current_price
+
+        if price_difference > 0.50:  # Only show price increases over 50 cents
+            PCT_OVER_WEB = (price_difference * 100) / (
+                (current_price + proposed_price) / 2
             )
-        except Exception as e:
-            logger.error(
-                "no matching volusion product",
-                code=product.productid,
-                desc=product.description,
-            )
+            PCT_PROFIT = ((proposed_price - product.anycost) * 100) / product.anycost
+
+            pct = PCT_PROFIT
+            if pct > 30:
+                logger.info(
+                    "%.2f%%" % pct,
+                    id=product.productid,
+                    desc=product.description.replace("\n", " ")[:30],
+                    cost="%.2f" % product.anycost,
+                    price_current="%.2f" % current_price,
+                    price_proposed="%.2f" % proposed_price,
+                    zt=product.prices.first().pricetype,
+                    zp="%.2f" % product.prices.first().price,
+                )
 
 
 """        _               

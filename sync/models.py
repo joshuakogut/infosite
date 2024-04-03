@@ -2,11 +2,20 @@ from product.models import *
 
 
 class Volusionproducts(models.Model):
-    productcode = models.CharField(
+    """productcode = models.CharField(
         db_column="ProductCode",
         primary_key=True,
         max_length=150,
         db_collation="SQL_Latin1_General_CP1_CI_AS",
+    )"""
+
+    product = models.OneToOneField(
+        Tbproduct,
+        on_delete=models.PROTECT,
+        db_column="ProductCode",
+        to_field="productid",
+        primary_key=True,
+        related_name="webproduct",
     )
     productname = models.CharField(
         db_column="ProductName",

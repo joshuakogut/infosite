@@ -310,6 +310,9 @@ class Tbproduct(models.Model):
         db_column="ProductPicture256", blank=True, null=True
     )
 
+    def __str__(self):
+        return "%s: %s" % self.productid, self.description[:30]
+
     @property
     def avgcost(self):
         cost = 0
@@ -318,6 +321,26 @@ class Tbproduct(models.Model):
                 cost = wh.summary.avgcost
         if cost > 0:
             return cost
+
+    @property
+    def anycost(self):
+        cost = 0
+        for wh in self.warehouses.all():
+
+            if wh.summary.avgcost and wh.summary.avgcost > cost:
+                cost = wh.summary.avgcost
+
+            if wh.summary.lastcost and wh.summary.lastcost > cost:
+                cost = wh.summary.lastcost
+
+        if cost == 0:
+            # Defer to vendor cost
+            cost = self.suppliers.get(preferred=True).vendorprice
+
+        if cost == 0:
+            raise Exception("Product without a cost")
+
+        return cost
 
     @property
     def mgmtcost(self):
@@ -333,7 +356,7 @@ class Tbproduct(models.Model):
         """Generates a price to upload to our web store"""
         price = 0
         for p in self.prices.all():
-            finalprice = p.FinalPrice
+            finalprice = p.CalculatedPrice
 
             if finalprice and finalprice > price:
                 price = finalprice
@@ -629,18 +652,25 @@ class Tbproductprice(models.Model):
     )
 
     @property
-    def FinalPrice(self):
+    def CalculatedPrice(self):
         if self.pricetype == "P":
             return self.price
         elif self.pricetype == "C%":
             # avg cost + %
             base = self.product.avgcost
             if not base:
-                try:
+
+                if self.product.suppliers.filter(preferred=True).count() == 1:
+                    # If product has a preferred supplier, use it
                     pps = self.product.suppliers.get(preferred=True)
-                    base = max(pps.vendorprice, pps.lastprice)
-                except Exception as e:
-                    pass
+                    base = pps.lastprice or pps.vendorprice
+                else:
+                    # Otherwise, get the most expensive one
+                    pps = self.product.suppliers.order_by("-lastprice").first()
+                    base = pps.lastprice or pps.vendorprice
+
+            if base is None:
+                pass
             hike = (base * self.price) / 100
             return base + hike
         elif self.pricetype == "S%":
