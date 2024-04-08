@@ -25,53 +25,55 @@ logger = Logger("sync.volusion.prods")
 
 
 def get_volusion_products():
-    infos = get_products(limit=699)
-
-    for prod in infos:
-        if "ProductPrice" in prod:
+    for payload in get_products(limit=699):
+        if "ProductPrice" in payload:
 
             defs = {
                 k.lower(): v
-                for k, v in prod.items()
+                for k, v in payload.items()
                 if k.lower() in Volusionproducts.__dict__.keys()
             }
-            defs["lastmodified"] = translate_volusion_ts(prod["LastModified"])
+            defs["lastmodified"] = translate_volusion_ts(payload["LastModified"])
 
             # If we have a matching local product
-            if Tbproduct.objects.filter(productid=prod["ProductCode"]).count() > 0:
-                ap = Tbproduct.objects.get(productid=prod["ProductCode"])
-                aprices = ap.prices.filter(pricetype="P")
+            if Tbproduct.objects.filter(productid=payload["ProductCode"]).count() > 0:
+                acct_product = Tbproduct.objects.get(productid=payload["ProductCode"])
+                acct_prices = acct_product.prices.filter(pricetype="P")
 
-                if aprices.count() > 0:
-                    p = aprices.first()
-                    volprice = float(prod["ProductPrice"])
-                    if p.price and volprice > float(p.price):
+                if acct_prices.count() > 0:
+                    localPrice = acct_prices.first()
+                    volprice = float(payload["ProductPrice"])
+                    if localPrice.price and volprice > float(localPrice.price):
                         logger.info(
                             "Raising local price",
-                            id=prod["ProductCode"],
-                            newprice=prod["ProductPrice"],
-                            oldprice=float(p.price),
+                            id=payload["ProductCode"],
+                            newprice=payload["ProductPrice"],
+                            oldprice=float(localPrice.price),
                         )
-                        p.price = prod["ProductPrice"]
-                        p.save()
+                        localPrice.price = payload["ProductPrice"]
+                        localPrice.save()
 
                 vp, created = Volusionproducts.objects.update_or_create(
-                    product=ap, defaults=defs
+                    product=acct_product, defaults=defs
                 )
 
-                logger.info("set %s" % prod["ProductCode"], lastmodby=prod["LastModBy"])
+                logger.info(
+                    "set %s" % payload["ProductCode"], lastmodby=payload["LastModBy"]
+                )
             else:
-                logger.info
-
-    print("recorded %s products" % len(infos))
+                logger.error(
+                    "product has no matching entry in acctivate",
+                    id=payload["ProductCode"],
+                )
+                input()
 
 
 def translate_volusion_ts(source):
     reg = r"(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{1,2}):(\d{1,2}) (\w{1,2})"
     matches = re.findall(reg, source)
-    MM, DD, YYYY, hh, mm, ss, OS = matches[0]
+    MM, DD, YYYY, hh, mm, ss, AM_PM = matches[0]
 
-    if OS == "PM":
+    if AM_PM == "PM":
         hh = int(hh)
         if hh < 12:
             hh += 12

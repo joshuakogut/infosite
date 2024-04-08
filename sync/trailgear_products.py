@@ -21,7 +21,7 @@ from sync.host import volusion
 from datetime import datetime, timedelta
 
 MISSING_TG_CACHE = "missing_tg_skus.json"
-TIME_THRESHOLD = datetime.now() - timedelta(hours=1)
+TIME_THRESHOLD = datetime.now() - timedelta(hours=24)
 
 
 def write_missing_products(missing_prods):
