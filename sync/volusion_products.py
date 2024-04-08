@@ -23,6 +23,8 @@ from portal import Logger
 
 logger = Logger("sync.volusion.prods")
 
+PAUSE_ON_ERROR = False
+
 
 def get_volusion_products():
     for payload in get_products(limit=699):
@@ -65,7 +67,8 @@ def get_volusion_products():
                     "product has no matching entry in acctivate",
                     id=payload["ProductCode"],
                 )
-                input()
+                if PAUSE_ON_ERROR:
+                    input()
 
 
 def translate_volusion_ts(source):
