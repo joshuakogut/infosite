@@ -36,7 +36,6 @@ def trailgear_products():
         .filter(preferred=True)
         .exclude(product__discontinued=True)
         .exclude(vendorproductid__isnull=True)
-        .filter(lastsync__lt=TIME_THRESHOLD)
         .order_by("lastsync")
     )
 
@@ -100,5 +99,5 @@ if __name__ == "__main__":
     unknown = products.filter(remoteid__isnull=True)
     discover_products(unknown)
 
-    known = products.filter(remoteid__isnull=False)
+    known = products.filter(remoteid__isnull=False).filter(lastsync__lt=TIME_THRESHOLD)
     scrape_products(known)

@@ -3,6 +3,13 @@ from portal.models import *
 
 class Tborders(models.Model):
     guidorder = models.CharField(db_column="GUIDOrder", primary_key=True, max_length=36)
+
+    workflowstatus = models.ForeignKey(
+        "Tborderworkflowstatus",
+        on_delete=models.PROTECT,
+        db_column="GUIDOrderWorkFlowStatus",
+        related_name="orders",
+    )
     customer = models.ForeignKey(
         Tbcustomer, on_delete=models.PROTECT, db_column="GUIDCustomer"
     )
@@ -611,9 +618,7 @@ class Tborders(models.Model):
     guidclass = models.CharField(
         db_column="GUIDClass", max_length=36, blank=True, null=True
     )
-    guidorderworkflowstatus = models.CharField(
-        db_column="GUIDOrderWorkFlowStatus", max_length=36, blank=True, null=True
-    )
+
     beingpickedby = models.CharField(
         db_column="BeingPickedBy",
         max_length=3,
@@ -1399,3 +1404,34 @@ class Tbshipmentpack(models.Model):
     class Meta:
         managed = False
         db_table = "tbshipmentpack"
+
+
+class Tborderworkflowstatus(models.Model):
+    guidorderworkflowstatus = models.CharField(
+        db_column="GUIDOrderWorkFlowStatus", primary_key=True, max_length=36
+    )  # Field name made lowercase.
+    description = models.CharField(
+        db_column="Description",
+        max_length=80,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    abbreviation = models.CharField(
+        db_column="Abbreviation",
+        max_length=5,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    workflowstatus = models.CharField(
+        db_column="WorkFlowStatus",
+        max_length=1,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = "tborderworkflowstatus"

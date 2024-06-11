@@ -1,4 +1,5 @@
 from portal.models import *
+from order.models import *
 
 
 class Tbproductclass(models.Model):
@@ -559,11 +560,16 @@ class Tbproductsupplier(models.Model):
     )
 
     def set_remote_stock(self, newvalue):
+        if self.lastsync is None:
+            lastsync = "never"
+        else:
+            lastsync = hf.format_timespan(timezone.now() - self.lastsync)
+
         logger.info(
             updated="remotestock",
             remotestock=newvalue,
             productid=self.product.productid,
-            lastsync=hf.format_timespan(timezone.now() - self.lastsync),
+            lastsync=lastsync,
         )
 
         self.remotestock = newvalue
@@ -910,3 +916,679 @@ class Productwarehousesummary(models.Model):
     class Meta:
         managed = False
         db_table = "productwarehousesummary"
+
+
+class Tbpo(models.Model):
+    guidpo = models.CharField(db_column="GUIDPO", primary_key=True, max_length=36)
+    vendor = models.ForeignKey(
+        Tbvendor, on_delete=models.PROTECT, db_column="GUIDVendor"
+    )
+    order = models.ForeignKey(Tborders, on_delete=models.PROTECT, db_column="GUIDOrder")
+
+    guidapaccount = models.CharField(
+        db_column="GUIDAPAccount", max_length=36, blank=True, null=True
+    )
+    approvedby = models.CharField(
+        db_column="ApprovedBy",
+        max_length=25,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    approvedbyid = models.CharField(
+        db_column="ApprovedByID",
+        max_length=8,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    approvedinvoicedate = models.DateTimeField(
+        db_column="ApprovedInvoiceDate", blank=True, null=True
+    )
+    approvedinvoicediscountamount = models.DecimalField(
+        db_column="ApprovedInvoiceDiscountAmount",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    approvedinvoicediscountdate = models.DateTimeField(
+        db_column="ApprovedInvoiceDiscountDate", blank=True, null=True
+    )
+    approvedinvoiceduedate = models.DateTimeField(
+        db_column="ApprovedInvoiceDueDate", blank=True, null=True
+    )
+    approvedinvoicenumber = models.CharField(
+        db_column="ApprovedInvoiceNumber",
+        max_length=20,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    dateapproved = models.DateTimeField(db_column="DateApproved", blank=True, null=True)
+    datecompleted = models.DateTimeField(
+        db_column="DateCompleted", blank=True, null=True
+    )
+    dateentered = models.DateTimeField(db_column="DateEntered", blank=True, null=True)
+    dateissued = models.DateTimeField(db_column="DateIssued", blank=True, null=True)
+    dateprinted = models.DateTimeField(db_column="DatePrinted", blank=True, null=True)
+    daterequested = models.DateTimeField(
+        db_column="DateRequested", blank=True, null=True
+    )
+    dontshipafter = models.DateTimeField(
+        db_column="DontShipAfter", blank=True, null=True
+    )
+    dontshipbefore = models.DateTimeField(
+        db_column="DontShipBefore", blank=True, null=True
+    )
+    enteredby = models.CharField(
+        db_column="EnteredBy",
+        max_length=5,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    fob = models.CharField(
+        db_column="FOB",
+        max_length=25,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    issuedby = models.CharField(
+        db_column="IssuedBy",
+        max_length=50,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    notes = models.TextField(
+        db_column="Notes",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    ponumber = models.CharField(
+        db_column="PONumber",
+        unique=True,
+        max_length=40,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    postatus = models.CharField(
+        db_column="POStatus",
+        max_length=1,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    printed = models.BooleanField(db_column="Printed")
+    promiseddate = models.DateTimeField(db_column="PromisedDate", blank=True, null=True)
+    guidpurchaseaccount = models.CharField(
+        db_column="GUIDPurchaseAccount", max_length=36, blank=True, null=True
+    )
+    readytoprint = models.BooleanField(db_column="ReadyToPrint")
+    requestdate = models.DateTimeField(db_column="RequestDate", blank=True, null=True)
+    requestedby = models.CharField(
+        db_column="RequestedBy",
+        max_length=25,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    requestedbyid = models.CharField(
+        db_column="RequestedByID",
+        max_length=8,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptoaddress1 = models.CharField(
+        db_column="ShipToAddress1",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptoaddress2 = models.CharField(
+        db_column="ShipToAddress2",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptoaddress3 = models.CharField(
+        db_column="ShipToAddress3",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptoaddress4 = models.CharField(
+        db_column="ShipToAddress4",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptoattention = models.CharField(
+        db_column="ShipToAttention",
+        max_length=50,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptocity = models.CharField(
+        db_column="ShipToCity",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptocountry = models.CharField(
+        db_column="ShipToCountry",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptoname = models.CharField(
+        db_column="ShipToName",
+        max_length=50,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptooverride = models.BooleanField(db_column="ShipToOverride")
+    shiptostate = models.CharField(
+        db_column="ShipToState",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shiptozip = models.CharField(
+        db_column="ShipToZip",
+        max_length=30,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    shipvia = models.CharField(
+        db_column="ShipVia",
+        max_length=25,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    specialinstructions = models.TextField(
+        db_column="SpecialInstructions",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    statuschangedby = models.CharField(
+        db_column="StatusChangedBy",
+        max_length=5,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    statusdate = models.DateTimeField(db_column="StatusDate", blank=True, null=True)
+    subtotalamountapproved = models.DecimalField(
+        db_column="SubTotalAmountApproved",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    suppliername = models.CharField(
+        db_column="SupplierName",
+        max_length=50,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplieroverride = models.BooleanField(db_column="SupplierOverride")
+    supplieraddress1 = models.CharField(
+        db_column="SupplierAddress1",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplieraddress2 = models.CharField(
+        db_column="SupplierAddress2",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplieraddress3 = models.CharField(
+        db_column="SupplierAddress3",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplieraddress4 = models.CharField(
+        db_column="SupplierAddress4",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    suppliercity = models.CharField(
+        db_column="SupplierCity",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierstate = models.CharField(
+        db_column="SupplierState",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierzip = models.CharField(
+        db_column="SupplierZip",
+        max_length=30,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    suppliercountry = models.CharField(
+        db_column="SupplierCountry",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbilladdress1 = models.CharField(
+        db_column="SupplierBillAddress1",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbilladdress2 = models.CharField(
+        db_column="SupplierBillAddress2",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbilladdress3 = models.CharField(
+        db_column="SupplierBillAddress3",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbilladdress4 = models.CharField(
+        db_column="SupplierBillAddress4",
+        max_length=500,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbillcity = models.CharField(
+        db_column="SupplierBillCity",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbillstate = models.CharField(
+        db_column="SupplierBillState",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbillzip = models.CharField(
+        db_column="SupplierBillZip",
+        max_length=30,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierbillcountry = models.CharField(
+        db_column="SupplierBillCountry",
+        max_length=255,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    guidterms = models.CharField(
+        db_column="GUIDTerms", max_length=36, blank=True, null=True
+    )
+    totalamount = models.DecimalField(
+        db_column="TotalAmount", max_digits=19, decimal_places=4, blank=True, null=True
+    )
+    totalamountapproved = models.DecimalField(
+        db_column="TotalAmountApproved",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    totalamountinvoiced = models.DecimalField(
+        db_column="TotalAmountInvoiced",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    totalamountoutstanding = models.DecimalField(
+        db_column="TotalAmountOutstanding",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    totalamountreceived = models.DecimalField(
+        db_column="TotalAmountReceived",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    totalotheramount = models.DecimalField(
+        db_column="TotalOtherAmount",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    type = models.CharField(
+        db_column="Type",
+        max_length=1,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    guidvendortype = models.CharField(
+        db_column="GUIDVendorType", max_length=36, blank=True, null=True
+    )
+    guidwarehouse = models.CharField(
+        db_column="GUIDWarehouse", max_length=36, blank=True, null=True
+    )
+    reference = models.CharField(
+        db_column="Reference",
+        max_length=30,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    relateddocument = models.CharField(
+        db_column="RelatedDocument",
+        max_length=30,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    vendcustid = models.CharField(
+        db_column="VendCustID",
+        max_length=20,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    contact = models.CharField(
+        db_column="Contact",
+        max_length=41,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    phone = models.CharField(
+        db_column="Phone",
+        max_length=30,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    fax = models.CharField(
+        db_column="FAX",
+        max_length=30,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    email = models.CharField(
+        db_column="Email",
+        max_length=253,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    salestax = models.DecimalField(
+        db_column="SalesTax", max_digits=19, decimal_places=4, blank=True, null=True
+    )
+    salestaxamountapproved = models.DecimalField(
+        db_column="SalesTaxAmountApproved",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    guidtaxcode = models.CharField(
+        db_column="GUIDTaxCode", max_length=36, blank=True, null=True
+    )
+    exchangerate = models.DecimalField(
+        db_column="ExchangeRate", max_digits=19, decimal_places=7
+    )
+    taxincluded = models.BooleanField(db_column="TaxIncluded")
+    field_exclapr = models.BooleanField(db_column="_EXCLAPR")
+    suppliersyncdate = models.DateTimeField(
+        db_column="SupplierSyncDate", blank=True, null=True
+    )
+    supplierstatus = models.CharField(
+        db_column="SupplierStatus",
+        max_length=10,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        managed = False
+        db_table = "tbpo"
+
+
+class Tbpodetail(models.Model):
+    guidpodetail = models.CharField(
+        db_column="GUIDPODetail", primary_key=True, max_length=36
+    )
+    po = models.ForeignKey(Tbpo, on_delete=models.PROTECT, db_column="GUIDPO")
+    amountapproved = models.DecimalField(
+        db_column="AmountApproved",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    complete = models.BooleanField(db_column="Complete")
+    description = models.TextField(
+        db_column="Description",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    guidglexpenseaccount = models.CharField(
+        db_column="GUIDGLExpenseAccount", max_length=36, blank=True, null=True
+    )
+    glexpenseaccountdescription = models.CharField(
+        db_column="GLExpenseAccountDescription",
+        max_length=50,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    lineamount = models.DecimalField(
+        db_column="LineAmount", max_digits=19, decimal_places=4, blank=True, null=True
+    )
+    displayamount = models.DecimalField(
+        db_column="DisplayAmount",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+    linenumber = models.IntegerField(db_column="LineNumber")
+    linetype = models.CharField(
+        db_column="LineType",
+        max_length=1,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    notes = models.TextField(
+        db_column="Notes",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    priceinvoiced = models.DecimalField(
+        db_column="PriceInvoiced",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    pricerequested = models.DecimalField(
+        db_column="PriceRequested",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    displayprice = models.DecimalField(
+        db_column="DisplayPrice", max_digits=19, decimal_places=7, blank=True, null=True
+    )
+    product = models.ForeignKey(
+        "Tbproduct", on_delete=models.PROTECT, db_column="GUIDProduct"
+    )
+    productid = models.CharField(
+        db_column="ProductID",
+        max_length=159,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    quantityinvoiceapproved = models.DecimalField(
+        db_column="QuantityInvoiceApproved",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    quantityordered = models.DecimalField(
+        db_column="QuantityOrdered",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    specialinstructions = models.TextField(
+        db_column="SpecialInstructions",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    supplierproductid = models.CharField(
+        db_column="SupplierProductID",
+        max_length=25,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    unit = models.CharField(
+        db_column="Unit",
+        max_length=5,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+
+    guidorderdetail = models.CharField(
+        db_column="GUIDOrderDetail", max_length=36, blank=True, null=True
+    )
+    guidtaxcode = models.CharField(
+        db_column="GUIDTaxCode", max_length=36, blank=True, null=True
+    )
+    salestax = models.DecimalField(
+        db_column="SalesTax", max_digits=19, decimal_places=4, blank=True, null=True
+    )
+    displayunit = models.CharField(
+        db_column="DisplayUnit",
+        max_length=5,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )
+    displayunitfactor = models.DecimalField(
+        db_column="DisplayUnitFactor",
+        max_digits=19,
+        decimal_places=7,
+        blank=True,
+        null=True,
+    )
+    landedcostsession = models.IntegerField(
+        db_column="LandedCostSession", blank=True, null=True
+    )
+    salestaxamountapproved = models.DecimalField(
+        db_column="SalesTaxAmountApproved",
+        max_digits=19,
+        decimal_places=4,
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        managed = False
+        db_table = "tbpodetail"
+
+
+class Tbproductalt(models.Model):
+    guidproductalt = models.CharField(
+        db_column="GUIDProductAlt", primary_key=True, max_length=36
+    )  # Field name made lowercase.
+    product = models.ForeignKey(
+        "Tbproduct",
+        on_delete=models.PROTECT,
+        db_column="GUIDProduct",
+        related_name="alt_ids",
+    )
+    altproductid = models.CharField(
+        db_column="AltProductID",
+        max_length=159,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+    )  # Field name made lowercase.
+    description = models.TextField(
+        db_column="Description",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    xreftype = models.CharField(
+        db_column="XrefType", max_length=3, db_collation="SQL_Latin1_General_CP1_CI_AS"
+    )  # Field name made lowercase.
+    guidlink = models.CharField(
+        db_column="GUIDLink", max_length=36, blank=True, null=True
+    )  # Field name made lowercase.
+    primary = models.BooleanField(db_column="Primary")  # Field name made lowercase.
+    note = models.TextField(
+        db_column="Note",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = "tbproductalt"
