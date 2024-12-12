@@ -18,7 +18,7 @@ send = []
 
 for p in prods[:limit]:
     fix = VolusionDescriptions.objects.get(productcode=p.product_id)
-    p.productdescription = fix.productdescription.replace("855-6341", "575-2174")
+    p.productdescription = fix.productdescription.replace("search", "replace")
     print("fixed %s" % p.product_id)
     p.save()
     send.append(
