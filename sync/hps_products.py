@@ -107,17 +107,18 @@ if __name__ == "__main__":
                         new=HPS.map,
                     )
                     price.price = HPS.map
+                    price.productpricecategory = "MAP"
                     price.save()
 
                 except ObjectDoesNotExist:
                     logger.warning(
-                        "No static list price found. Skipping update",
+                        "No static list price found. Skipping sale price update",
                         productid=product.productid,
                     )
 
             else:
                 logger.error(
-                    "No HPS price entry found. Skipping update",
+                    "No HPS price entry found. Skipping productsupplier update",
                     productid=product.productid,
                     vendor=ps.vendorproductid,
                 )
