@@ -27,7 +27,7 @@ PAUSE_ON_ERROR = False
 
 
 def get_volusion_products():
-    for payload in get_products(limit=699):
+    for payload in get_products(limit=1499):
         if "ProductPrice" in payload:
 
             defs = {
@@ -40,10 +40,10 @@ def get_volusion_products():
             # If we have a matching local product
             if Tbproduct.objects.filter(productid=payload["ProductCode"]).count() > 0:
                 acct_product = Tbproduct.objects.get(productid=payload["ProductCode"])
-                acct_prices = acct_product.prices.filter(pricetype="P")
+                acct_static_prices = acct_product.prices.filter(pricetype="P")
 
-                if acct_prices.count() > 0:
-                    localPrice = acct_prices.first()
+                if acct_static_prices.count() > 0:
+                    localPrice = acct_static_prices.first()
                     volprice = float(payload["ProductPrice"])
                     if localPrice.price and volprice > float(localPrice.price):
                         logger.info(
@@ -143,14 +143,8 @@ def rewrite_products(limit=99):
             sus.save()
 
 
-if __name__ == "__main__":
-    # pull the web products
-    logger.info("INSTRUCTIONS: Go clear out the product sync history in volusion.")
-    # input("continue >")
-
-    get_volusion_products()
-
-    # synchronize available info
+def identify_underpriced():
+    # Find available products
     available = (
         Tbproduct.objects.filter(availonweb=True)
         .filter(status=1)  # must be active
@@ -159,12 +153,15 @@ if __name__ == "__main__":
         .exclude(webproduct__isnull=True)  # need a matching entry reported by volusion
         .order_by("-updateddate")  # most recently updated in acctivate
     )
-    for product in available[:200]:
+
+    bad = 0
+    for product in available:
         current_price = product.webproduct.productprice
         proposed_price = product.WebPrice
         price_difference = proposed_price - current_price
 
         if price_difference > 0.50:  # Only show price increases over 50 cents
+            bad += 1
             PCT_OVER_WEB = (price_difference * 100) / (
                 (current_price + proposed_price) / 2
             )
@@ -179,10 +176,22 @@ if __name__ == "__main__":
                     cost="%.2f" % product.anycost,
                     price_current="%.2f" % current_price,
                     price_proposed="%.2f" % proposed_price,
-                    zt=product.prices.first().pricetype,
-                    zp="%.2f" % product.prices.first().price,
+                    z_type=product.prices.first().pricetype,
+                    z_price="%.2f" % product.prices.first().price,
                 )
 
+    logger.info("products under expected price", count=bad)
+
+
+if __name__ == "__main__":
+
+    logger.info("INSTRUCTIONS: Go clear out the product sync history in volusion.")
+
+    get_volusion_products()
+
+    con = input("find out of pocket pricing? y/N")
+    if con.lower() == "y":
+        identify_underpriced()
 
 """        _               
 _ __  _ __(_) ___ ___  ___ 

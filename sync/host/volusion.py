@@ -45,7 +45,8 @@ def get_products(limit=99):
 
 def update_products(products):  # list[dict[string:any]]
     if len(products) == 1:
-        logger.info(**products[0])
+        pass
+        # logger.info(**products[0])
     else:
         logger.info("sending %s products to volusion", count=len(products))
 
@@ -55,7 +56,7 @@ def update_products(products):  # list[dict[string:any]]
     for product in products:
         xml += "<Products>"
 
-        escapables = ["ProductDescription"]
+        escapables = ["ProductDescription", "TechSpecs", "ExtInfo"]
         for key in product.keys():
             content = product[key]
             if key in escapables:

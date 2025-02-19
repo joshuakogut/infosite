@@ -1592,3 +1592,50 @@ class Tbproductalt(models.Model):
     class Meta:
         managed = False
         db_table = "tbproductalt"
+
+
+class Tbproductcomponent(models.Model):
+    guidproductcomponent = models.CharField(
+        db_column="GUIDProductComponent", primary_key=True, max_length=36
+    )  # Field name made lowercase.
+    product = models.ForeignKey(
+        "Tbproduct",
+        on_delete=models.PROTECT,
+        db_column="GUIDProduct",
+        related_name="components",
+    )
+    componenttype = models.CharField(
+        db_column="ComponentType",
+        max_length=1,
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+    componentguidproduct = models.CharField(
+        db_column="ComponentGUIDProduct", max_length=36
+    )  # Field name made lowercase.
+    guidcomponentwarehouse = models.CharField(
+        db_column="GUIDComponentWarehouse", max_length=36, blank=True, null=True
+    )  # Field name made lowercase.
+    quantity = models.DecimalField(
+        db_column="Quantity", max_digits=19, decimal_places=7, blank=True, null=True
+    )  # Field name made lowercase.
+    variablequantity = models.BooleanField(
+        db_column="VariableQuantity"
+    )  # Field name made lowercase.
+    cost = models.DecimalField(
+        db_column="Cost", max_digits=19, decimal_places=7, blank=True, null=True
+    )  # Field name made lowercase.
+    sequence = models.IntegerField(
+        db_column="Sequence", blank=True, null=True
+    )  # Field name made lowercase.
+    note = models.TextField(
+        db_column="Note",
+        db_collation="SQL_Latin1_General_CP1_CI_AS",
+        blank=True,
+        null=True,
+    )  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = "tbproductcomponent"

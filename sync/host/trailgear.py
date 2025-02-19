@@ -141,11 +141,13 @@ def check_login(driver):
 
 def search_order(driver, ponumber):
     driver.get(history_url)
-    waitfor = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, "my-orders-table_wrapper"))
-    )
+    # waitfor = WebDriverWait(driver, 10).until(
+    #    EC.presence_of_element_located((By.ID, "my-orders-table_wrapper"))
+    # )
 
-    driver.find_element("xpath", '//input[@type="search"]').send_keys(str(ponumber))
+    driver.find_element("xpath", '//input[@id="product-name-sku"]').send_keys(
+        str(ponumber)
+    )
     driver.wait_for_ajax()
 
     status = "404"

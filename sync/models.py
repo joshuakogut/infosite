@@ -59,3 +59,16 @@ class Volusionproducts(models.Model):
     class Meta:
         managed = False
         db_table = "volusionproducts"
+
+
+class VolusionDescriptions(models.Model):
+    productcode = models.CharField(
+        primary_key=True, max_length=50, db_collation="SQL_Latin1_General_CP1_CI_AS"
+    )
+    productdescription = models.TextField(
+        db_collation="SQL_Latin1_General_CP1_CI_AS", blank=True, null=True
+    )
+
+    class Meta:
+        managed = False
+        db_table = "volusion_descriptions"

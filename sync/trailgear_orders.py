@@ -24,7 +24,7 @@ import uuid
 from tracking_numbers import get_tracking_number
 
 
-def trailgear_orders(limit=10):
+def trailgear_orders(limit=20):
     return (
         Tbpo.objects.filter(vendor__name="Trail Gear")
         .filter(order__isnull=False)
@@ -41,7 +41,7 @@ TG_SKU_CACHE = "missing_tg_skus.json"
 if __name__ == "__main__":
 
     # while True:
-    pos = trailgear_orders(limit=10)
+    pos = trailgear_orders(limit=20)
 
     logger.info("Launching agent")
     driver = Agent(cookie="tg")

@@ -5,17 +5,21 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portal.settings")
 django.setup()
 
 # your imports, e.g. Django models
-from portal.models import Volusionproducts
+from sync.models import Volusionproducts
+from sync.host.volusion import update_products
+import re
 
-prods = Volusionproducts.objects.filter(productdescription__contains="EPA")
-for p in prods:
-    desc = p.productdescription.split("\n")
-    i = 0
-    for line in desc:
-        if line.find("EPA") > -1:
-            p.productdescription = "\n".join(desc[0:i])
-            print("fixed %s" % p.productcode)
-            p.save()
-            continue
-        else:
-            i += 1
+prods = Volusionproducts.objects.filter(productdescription__contains="855-6341")
+
+limit = 50
+send = []
+
+for p in prods[:limit]:
+    p.productdescription = p.productdescription.replace("855-6341", "575-2174")
+    print("fixed %s", p.product_id)
+    p.save()
+    send.append(
+        {"ProductCode": p.product_id, "ProductDescription": p.productdescription}
+    )
+
+update_products(send)
