@@ -11,6 +11,7 @@ django.setup()
 
 
 from portal import Logger
+from portal.dev_settings import T14_USER, T14_PASS
 
 logger = Logger("sync.host.turn14")
 
@@ -23,8 +24,6 @@ from sync.host.volusion import update_products, VolusionError
 download_dir = "/mnt/share/"
 pref_url = "https://turn14.com/export_preferences.php"
 feed_url = "https://turn14.com/export.php?action=inventory_feed"
-t14_user = "lcengineering"
-t14_pass = "***REMOVED***!"
 
 if __name__ == "__main__":
 
@@ -38,8 +37,8 @@ if __name__ == "__main__":
         passw = driver.find_element("xpath", '//input[@name="password"]')
         submit = driver.find_element("xpath", '//button[@type="submit"]')
 
-        uname.send_keys(t14_user)
-        passw.send_keys(t14_pass)
+        uname.send_keys(T14_USER)
+        passw.send_keys(T14_PASS)
         submit.click()
 
         waitfor = WebDriverWait(driver, 30).until(

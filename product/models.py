@@ -1,5 +1,6 @@
 from portal.models import *
 from order.models import *
+from django.db.models import Q
 
 
 class Tbproductclass(models.Model):
@@ -363,20 +364,6 @@ class Tbproduct(models.Model):
                 price = finalprice
         return price
 
-    @property
-    def WebStock(self):
-        """Generates a stock number to upload to our web store"""
-        stock = 0
-
-        for wh in self.warehouses.all():
-            if wh.summary.available and wh.summary.available > 0:
-                stock += wh.summary.available
-        if stock == 0:
-            for ps in self.suppliers.filter(remotestock__gt=0):
-                stock += ps.remotestock
-
-        return stock
-
     class Meta:
         managed = False
         db_table = "tbproduct"
@@ -549,31 +536,6 @@ class Tbproductsupplier(models.Model):
         blank=True,
         null=True,
     )
-    remotestock = models.IntegerField(db_column="RemoteStock", blank=True, null=True)
-    lastsync = models.DateTimeField(db_column="LastSync", blank=True, null=True)
-    remoteid = models.CharField(
-        db_column="RemoteID",
-        max_length=250,
-        db_collation="SQL_Latin1_General_CP1_CI_AS",
-        blank=True,
-        null=True,
-    )
-
-    def set_remote_stock(self, newvalue):
-        if self.lastsync is None:
-            lastsync = "never"
-        else:
-            lastsync = hf.format_timespan(timezone.now() - self.lastsync)
-
-        logger.info(
-            updated="remotestock",
-            remotestock=newvalue,
-            productid=self.product.productid,
-            lastsync=lastsync,
-        )
-
-        self.remotestock = newvalue
-        self.lastsync = timezone.now()
 
     class Meta:
         managed = False
