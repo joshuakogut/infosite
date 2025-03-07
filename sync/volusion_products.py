@@ -156,29 +156,36 @@ def identify_underpriced():
 
     bad = 0
     for product in available:
-        current_price = product.webproduct.productprice
-        proposed_price = product.WebPrice
-        price_difference = proposed_price - current_price
+        try:
+            current_price = product.webproduct.productprice
+            proposed_price = product.WebPrice
+            price_difference = proposed_price - current_price
 
-        if price_difference > 0.50:  # Only show price increases over 50 cents
-            bad += 1
-            PCT_OVER_WEB = (price_difference * 100) / (
-                (current_price + proposed_price) / 2
-            )
-            PCT_PROFIT = ((proposed_price - product.anycost) * 100) / product.anycost
-
-            pct = PCT_PROFIT
-            if pct > 30:
-                logger.info(
-                    "%.2f%%" % pct,
-                    id=product.productid,
-                    desc=product.description.replace("\n", " ")[:30],
-                    cost="%.2f" % product.anycost,
-                    price_current="%.2f" % current_price,
-                    price_proposed="%.2f" % proposed_price,
-                    z_type=product.prices.first().pricetype,
-                    z_price="%.2f" % product.prices.first().price,
+            if price_difference > 0.50:  # Only show price increases over 50 cents
+                bad += 1
+                PCT_OVER_WEB = (price_difference * 100) / (
+                    (current_price + proposed_price) / 2
                 )
+                PCT_PROFIT = (
+                    (proposed_price - product.anycost) * 100
+                ) / product.anycost
+
+                pct = PCT_PROFIT
+                if pct > 30:
+                    logger.info(
+                        "%.2f%%" % pct,
+                        id=product.productid,
+                        desc=product.description.replace("\n", " ")[:30],
+                        cost="%.2f" % product.anycost,
+                        price_current="%.2f" % current_price,
+                        price_proposed="%.2f" % proposed_price,
+                        z_type=product.prices.first().pricetype,
+                        z_price="%.2f" % product.prices.first().price,
+                    )
+        except Exception as e:
+            logger.error(
+                "error processing product", productid=product.productid, error=e
+            )
 
     logger.info("products under expected price", count=bad)
 
@@ -191,6 +198,8 @@ if __name__ == "__main__":
 
     con = input("find out of pocket pricing? y/N")
     if con.lower() == "y":
+
+        # TODO: pull the modification out of here and report how out of pocket stuff is before asking to update
         identify_underpriced()
 
 """        _               

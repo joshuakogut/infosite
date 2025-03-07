@@ -637,10 +637,12 @@ class Tbproductprice(models.Model):
                     pps = self.product.suppliers.order_by("-lastprice").first()
                     base = pps.lastprice or pps.vendorprice
 
-            if base is None:
-                pass
-            hike = (base * self.price) / 100
-            return base + hike
+            if base is not None:
+                hike = (base * self.price) / 100
+                return base + hike
+            else:
+                raise Exception("No cost to calculate price")
+
         elif self.pricetype == "S%":
             # mgmt cost + %
             base = self.product.mgmtcost

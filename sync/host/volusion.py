@@ -3,6 +3,15 @@ import xmltodict
 import re
 from bs4 import BeautifulSoup
 from xml.sax.saxutils import escape
+import sys, os
+
+import django
+
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portal.settings")
+django.setup()
 from portal.settings import VOL_USER, VOL_PASS
 from portal import Logger
 
