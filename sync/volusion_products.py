@@ -202,8 +202,8 @@ if __name__ == "__main__":
         # TODO: pull the modification out of here and report how out of pocket stuff is before asking to update
         identify_underpriced()
 
-"""        _               
-_ __  _ __(_) ___ ___  ___ 
+"""         _               
+ _ __  _ __(_) ___ ___  ___ 
 | '_ \| '__| |/ __/ _ \/ __|
 | |_) | |  | | (_|  __/\__\\
 | .__/|_|  |_|\___\___||___/

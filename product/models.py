@@ -642,7 +642,7 @@ class Tbproductprice(models.Model):
                 return base + hike
             else:
                 raise Exception("No cost to calculate price")
-
+            
         elif self.pricetype == "S%":
             # mgmt cost + %
             base = self.product.mgmtcost
