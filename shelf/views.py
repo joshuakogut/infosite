@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
-from .models import Tbproductwarehouse, Tbwhlocation
+from .models import Tbwhlocation
 
 
 def shelf_index(request):
@@ -34,15 +34,6 @@ def wipe(request):
 
     # TODO: implement wiping logic here. For now, just accept and return OK.
     # e.g. perform any server-side clearing or state changes for `shelf`.
-    print(f"Received wipe request for shelf: {shelf}")
-    location = Tbwhlocation.objects.filter(description=shelf).first()
-    if location:
-        print("Found location:", shelf, location.guidwhlocation)
-        # clear all Tbproductwarehouse entries for this location
-        Tbproductwarehouse.objects.filter(
-            guidwhlocation=location.guidwhlocation
-        ).delete()
-    else:
-        print("No location found for shelf:", shelf)
+    pass
 
     return HttpResponse("OK")
