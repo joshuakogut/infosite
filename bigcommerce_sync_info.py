@@ -4,14 +4,18 @@
 Iterates every product on the BigCommerce store, matches its SKU to
 Tbproduct.productid, and syncs:
 
-- WebAddress: the product's storefront URL (visible products only).
+- WebAddress: the product's storefront URL (products marked available).
 
 - tbproductprice Price: the product's normal price into the product's
   base ("*") price row. If that row's PriceType is anything besides P,
   the type is first reset to P (P = static price; C%/M%/S% compute the
   price from cost + margin, which the storefront price would corrupt).
+  A BC price of 0 means "unset" in BigCommerce, so it is never written.
 
-Dry-run by default. Use --apply to write:
+Eligibility: the SKU must match a local Tbproduct. Product must be
+is_visible OR (availability == "available" AND custom_url present), i.e.
+purchasable on the storefront (some are delisted from navigation but
+still buyable by direct link). Dry-run by default. Use --apply to write:
     python bigcommerce_sync_info.py          # report only
     python bigcommerce_sync_info.py --apply  # assign WebAddress + Price
 """
@@ -54,7 +58,7 @@ def get_store_url():
 
 
 def get_all_products():
-    """Yield every BigCommerce product (id, sku, price, url, visibility)."""
+    """Yield every BigCommerce product (id, sku, price, url, availability)."""
     page = 1
     limit = 250
     while True:
@@ -64,7 +68,7 @@ def get_all_products():
             params={
                 "page": page,
                 "limit": limit,
-                "include_fields": "id,name,sku,price,custom_url,is_visible",
+                "include_fields": "id,name,sku,price,custom_url,is_visible,availability",
             },
             timeout=30,
         )
@@ -78,19 +82,33 @@ def get_all_products():
         page += 1
 
 
+def sync_eligible(p):
+    """Return True when a BigCommerce product should be synced locally.
+
+    is_visible covers navigation-listed products. availability=available
+    covers products delisted from navigation but still buyable by direct
+    link (404 would otherwise be a broken URL -- see 4010059 / BC 19900).
+    """
+    if p.get("is_visible"):
+        return True
+    if p.get("availability") == "available":
+        custom_url = (p.get("custom_url") or {}).get("url")
+        return bool(custom_url)
+    return False
+
+
 def main(apply=False):
     base_url = get_store_url()
     print(f"Store: {base_url}")
 
-    visible, hidden, no_local, skipped = 0, 0, [], 0
+    eligible, no_local, skipped, zero_price = 0, [], 0, 0
     url_updates, price_updates, type_resets = [], [], []
 
     for p in get_all_products():
         sku = (p.get("sku") or "").strip()
-        if not p.get("is_visible"):
-            hidden += 1
+        if not sync_eligible(p):
             continue
-        visible += 1
+        eligible += 1
         if not sku or not Tbproduct.objects.filter(productid=sku).exists():
             no_local.append((p["id"], p.get("name"), sku))
             continue
@@ -107,8 +125,12 @@ def main(apply=False):
 
         # Normal price -> base ("*") price row. A non-P PriceType computes
         # Price from cost + margin, so it must be reset to P first.
+        # BC price 0 means "unset", so it is never written.
         price = p.get("price")
         if price is None:
+            continue
+        if Decimal(str(price)) == 0:
+            zero_price += 1
             continue
         row = (
             Tbproductprice.objects.filter(
@@ -128,11 +150,12 @@ def main(apply=False):
             if row["pricetype"] != "P":
                 type_resets.append(sku)
 
-    print(f"\nVisible: {visible}  Hidden: {hidden}")
+    print(f"\nEligible (synced or would be synced): {eligible}")
     print(f"SKUs with no local Tbproduct: {len(no_local)}")
     for bc_id, name, sku in no_local[:20]:
         print(f"  BC {bc_id} name={name!r} sku={sku!r}")
     print(f"URLs already correct: {skipped}  URL updates: {len(url_updates)}")
+    print(f"Prices skipped as $0 (unset): {zero_price}")
     print(
         f"Price updates: {len(price_updates)} "
         f"(PriceType reset to P: {len(type_resets)})"
