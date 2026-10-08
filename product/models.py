@@ -472,7 +472,7 @@ class Tbproductwarehouse(models.Model):
     class Meta:
         managed = False
         db_table = "tbproductwarehouse"
-        unique_together = (("guidproduct", "guidwarehouse"),)
+        unique_together = (("product", "warehouse"),)
 
 
 class Tbproductsupplier(models.Model):
@@ -540,7 +540,7 @@ class Tbproductsupplier(models.Model):
     class Meta:
         managed = False
         db_table = "tbproductsupplier"
-        unique_together = (("guidproduct", "guidvendor", "vendorproductid"),)
+        unique_together = (("product", "vendor", "vendorproductid"),)
 
 
 class Tbproductprice(models.Model):
@@ -642,7 +642,7 @@ class Tbproductprice(models.Model):
                 return base + hike
             else:
                 raise Exception("No cost to calculate price")
-            
+
         elif self.pricetype == "S%":
             # mgmt cost + %
             base = self.product.mgmtcost
