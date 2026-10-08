@@ -4,4 +4,4 @@ from portal import models
 
 
 def index(request):
-    return HttpResponse(status=500)
+    return HttpResponse("Hello world")
