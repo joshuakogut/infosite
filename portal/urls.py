@@ -3,11 +3,11 @@ from django.urls import include, path, re_path
 
 from . import views
 
-
 urlpatterns = [
-    # path("feed.tsv",                  views.feed, name="feed"),
+    # path("feed.tsv", views.feed, name="feed"),
+    path("shelf/", include("shelf.urls")),
     path("order/", include("order.urls")),
     path("product/", include("product.urls")),
     re_path(r"^.*/?$", views.index, name="index"),
-    # path('admin/',                    admin.site.urls),
+    # path('admin/', admin.site.urls),
 ]
