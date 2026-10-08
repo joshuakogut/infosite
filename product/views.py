@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from django.conf import settings
-from django.core.paginator import InvalidPage, Paginator
-from django.db import connection
+from django.core.paginator import Paginator
+from django.db.models import Sum
 from django.http import HttpResponse, HttpResponseNotModified
 from django.utils import timezone
 from django.utils.http import quote_etag
 from datetime import timedelta
+from order.models import Tborderdetail
 from product.models import Tbproduct
 from sync.models import Volusionproducts
 
@@ -43,86 +44,62 @@ def index(request):
     column mapping on the model is broken, so selecting full rows raises
     Invalid column name 'TaxInPrice'.
 
-    Gross is computed in raw SQL with a single grouped LEFT JOIN: the ORM
-    equivalent is a correlated subquery per product and costs 2.12s for the
-    first page vs 0.26s raw, for identical rows.
+    Gross is two ORM queries -- one grouped aggregate over the order
+    details, one product list -- merged and sorted in Python. An ORM
+    correlated subquery per product costs 2.12s for the first page;
+    two flat queries cost ~0.4s for identical rows.
     """
     sort = request.GET.get("sort", "productid")
     if sort not in SORTS:
         sort = "productid"
 
     if sort == "gross":
-        page_obj = _gross_page(request)
+        rows = _gross_rows()
     else:
-        rows, _ = _productid_rows()
-        paginator = Paginator(rows, 100)
-        page_obj = paginator.get_page(request.GET.get("page"))
+        rows = Tbproduct.objects.values("productid", "description").order_by(
+            "productid"
+        )
+
+    paginator = Paginator(rows, 100)
+    page_obj = paginator.get_page(request.GET.get("page"))
     ctx = {"page_obj": page_obj, "sort": sort, "sorts": SORTS}
 
     return render(request, "product/list.html", ctx)
 
 
-def _productid_rows():
-    qs = Tbproduct.objects.values("productid", "description").order_by("productid")
-    return qs, qs.count()
+def _gross_rows():
+    """All (productid, description, gross) dicts, ordered gross desc.
 
-
-def _gross_page(request):
-    """One page of (productid, description, gross) dicts, as a page_obj.
-
-    Gross is pre-paged in SQL (OFFSET/FETCH), so this builds the Paginator
-    over a same-length placeholder list and swaps in the fetched rows --
-    the template's page_obj interface (has_previous/next, number,
-    paginator.count/num_pages) works unchanged.
+    One grouped aggregate joined through the real FKs
+    (Tborderdetail.guidorder -> Tborders, Tborderdetail.guidproduct ->
+    Tbproduct), merged in Python against the filtered product list.
     """
     limit = timezone.now() - timedelta(days=REVENUE_MONTHS * 30)
 
-    base = """
-        FROM tbproduct p
-        JOIN tbproductclass c ON c.GUIDProductClass = p.GUIDProductClass
-        LEFT JOIN (
-            SELECT d.GUIDProduct, SUM(d.Amount) AS gross
-            FROM tborderdetail d
-            JOIN tborders o ON o.GUIDOrder = d.GUIDOrder
-            WHERE o.EntryDate >= %s
-              AND d.LineCancelled = 0
-              AND d.LineType IN ('P', 'D', 'S')
-            GROUP BY d.GUIDProduct
-        ) g ON g.GUIDProduct = p.GUIDProduct
-        WHERE p.Status = 1 AND c.ProductClassID = 'PC5'
-    """
-    params = [limit]
-
-    with connection.cursor() as cur:
-        cur.execute("SELECT COUNT(*) " + base, params)
-        total = cur.fetchone()[0]
-
-    per_page = 100
-    num_pages = (total + per_page - 1) // per_page or 1
-    raw_page = request.GET.get("page") or "1"
-    page_number = (
-        int(raw_page) if raw_page.isdigit() and int(raw_page) >= 1 else 1
-    )
-    page_number = min(page_number, num_pages)
-    offset = (page_number - 1) * per_page
-
-    with connection.cursor() as cur:
-        cur.execute(
-            "SELECT p.ProductID, p.Description, ISNULL(g.gross, 0) AS gross "
-            + base
-            + " ORDER BY gross DESC, p.ProductID "
-            + "OFFSET %s ROWS FETCH NEXT 100 ROWS ONLY",
-            params + [offset],
+    agg = (
+        Tborderdetail.objects.filter(
+            guidorder__entrydate__gte=limit,
+            linecancelled=False,
+            linetype__in=REVENUE_LINETYPES,
         )
-        rows = [
-            {"productid": r[0], "description": r[1], "gross": r[2]}
-            for r in cur.fetchall()
-        ]
+        .values("guidproduct")
+        .annotate(gross=Sum("amount"))
+    )
+    gross_by_product = {a["guidproduct"]: a["gross"] or 0 for a in agg}
 
-    paginator = Paginator([None] * total, per_page)
-    page_obj = paginator.page(page_number)
-    page_obj.object_list = rows
-    return page_obj
+    products = Tbproduct.objects.filter(
+        status=True, productclass__productclassid="PC5"
+    ).values("guidproduct", "productid", "description")
+    rows = [
+        {
+            "productid": p["productid"],
+            "description": p["description"],
+            "gross": gross_by_product.get(p["guidproduct"], 0),
+        }
+        for p in products
+    ]
+    rows.sort(key=lambda r: (-r["gross"], r["productid"]))
+    return rows
 
 
 def _image_content_type(data: bytes) -> str:
