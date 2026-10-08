@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 18px;
+        }
+        .status {
+            text-align: center;
+        }
+        .header-row {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            z-index: 1100;
+            padding: 0 16px;
+            max-width: calc(100% - 32px);
+        }
+
+        .auto-wipe-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.12);
+            padding: 14px 18px;
+            border-radius: 999px;
+            font-size: 18px;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        .auto-wipe-toggle input[type="checkbox"] {
+            width: 28px;
+            height: 28px;
+            accent-color: #0ff;
+        }
+
+        .active-shelf {
+            background: rgba(255,255,255,0.08);
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 38px;
+            font-weight: 700;
+            color: #0ff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+            min-width: 240px;
+            text-align: center;
+        }
+        .active-shelf small {
+            display: block;
+            font-size: 14px;
+            color: #aaa;
+            font-weight: 400;
+            margin-top: 6px;
+        }
+        .flash {
+            animation: flash 400ms ease-in-out;
+        }
+        @keyframes flash {
+            0% { background-color: rgba(255,255,255,0.12); }
+            50% { background-color: rgba(255,255,255,0.04); }
+            100% { background-color: rgba(255,255,255,0.06); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-row">
+        <div class="active-shelf" id="active-shelf">Active shelf: <span id="active-shelf-value">None</span>
+            <small>Scanned shelf location</small>
+        </div>
+        <label class="auto-wipe-toggle">
+            <input type="checkbox" id="auto-wipe-checkbox" checked>
+            <span>Auto-wipe</span>
+        </label>
+    </div>
+
+    <div class="container">
+        <div class="status">
+            <p>Ready for barcode input...</p>
+        </div>
+    </div>
+
+    {{ location_descriptions|json_script:"location-data" }}
+
+    <script>
+        let buffer = '';
+        const autoWipeCheckbox = document.getElementById('auto-wipe-checkbox');
+        const activeShelfValue = document.getElementById('active-shelf-value');
+        const activeShelfBox = document.getElementById('active-shelf');
+        const statusParagraph = document.querySelector('.status p');
+        const validLocations = JSON.parse(document.getElementById('location-data').textContent || '[]')
+            .map(item => typeof item === 'string' ? item.trim() : item);
+
+        function setActiveShelf(val) {
+            const text = val || 'None';
+            if (!text || text === 'None') {
+                statusParagraph.textContent = 'No shelf location scanned.';
+                return;
+            }
+
+            if (!validLocations.includes(text)) {
+                statusParagraph.textContent = `Invalid shelf location: ${text}`;
+                activeShelfValue.textContent = 'None';
+                activeShelfBox.classList.remove('flash');
+                void activeShelfBox.offsetWidth;
+                activeShelfBox.classList.add('flash');
+                console.warn('Shelf location not found locally:', text);
+                return;
+            }
+
+            activeShelfValue.textContent = text;
+            statusParagraph.textContent = `Active shelf set to ${text}`;
+            activeShelfBox.classList.remove('flash');
+            void activeShelfBox.offsetWidth;
+            activeShelfBox.classList.add('flash');
+            postShelfToServer(text);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function postShelfToServer(shelf) {
+            if (!shelf || shelf === 'None') return;
+            if (!autoWipeCheckbox.checked) {
+                console.log('Auto-wipe is disabled; skipping wipe request for', shelf);
+                return;
+            }
+            const url = './wipe/';
+            const body = new URLSearchParams();
+            body.append('shelf', shelf);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken') || ''
+                },
+                body: body.toString(),
+                credentials: 'same-origin'
+            }).then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.text();
+            }).then(text => {
+                console.log('Wipe request successful:', text);
+            }).catch(err => {
+                console.error('Wipe request failed:', err);
+            });
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const code = buffer.trim();
+                if (/^:/.test(code)) {
+                    const parts = code.split(':');
+                    const loc = (parts.slice(1).join(':') || '').trim();
+                    setActiveShelf(loc);
+                    console.log('Active shelf set to', loc);
+                } else if (code.length) {
+                    console.log('Barcode:', code);
+                }
+                buffer = '';
+            } else if (event.key === 'Escape') {
+                buffer = '';
+                console.log('Buffer cleared');
+            } else if (event.key.length === 1) {
+                // only accumulate printable single-character keys
+                buffer += event.key;
+            } else {
+                // ignore other special keys (Shift, Alt, Arrow keys, etc.)
+            }
+        });
+
+        // Also listen for paste events (some scanners might use clipboard)
+        document.addEventListener('paste', function(event) {
+            event.preventDefault();
+            const text = event.clipboardData.getData('text') || '';
+            buffer += text;
+            // if pasted content contains newline, treat as Enter
+            if (/[\r\n]/.test(text)) {
+                const code = buffer.replace(/[\r\n]/g, '').trim();
+                    if (/^:/.test(code)) {
+                        const parts = code.split(':');
+                        const loc = (parts.slice(1).join(':') || '').trim();
+                    setActiveShelf(loc);
+                    console.log('Active shelf set to', loc);
+                } else if (code.length) {
+                    console.log('Barcode (pasted):', code);
+                }
+                buffer = '';
+            } else {
+                console.log('Pasted data added to buffer');
+            }
+        });
+
+        console.log('Barcode scanner ready. Press Escape to clear buffer, Enter to log.');
+    </script>
+</body>
+</html>
