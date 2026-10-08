@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "product",
     "order",
     "sync",
+    "shelf",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
