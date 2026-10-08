@@ -2,3 +2,7 @@
 cookies.json
 portal/dev_settings.py
 .vscode
+
+# Generated output
+update-stock.log
+brands.csv
