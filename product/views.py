@@ -183,6 +183,8 @@ def detail(request, productid):
         return render(request, "product/detail.html", {"product": None}, status=404)
     # Not every product has a web product row (6,718 of 9,732 do), so use
     # first() rather than get() and let the template render without one.
-    info = Volusionproducts.objects.filter(product__productid=productid).first()
-    ctx = {"product": product, "info": info}
+    
+    # todo: delete this
+    # info = Volusionproducts.objects.filter(product__productid=productid).first()
+    ctx = {"product": product}
     return render(request, "product/detail.html", ctx)
