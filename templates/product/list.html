@@ -2,11 +2,21 @@
 
 {% block content %}
 
+<form method="get" action="/product/" class="sort">
+    <label for="sort">Sort by:</label>
+    <select name="sort" id="sort" onchange="this.form.submit()">
+        {% for key, cfg in sorts.items %}
+        <option value="{{ key }}"{% if key == sort %} selected{% endif %}>{{ cfg.label }}</option>
+        {% endfor %}
+    </select>
+    <noscript><button type="submit">Apply</button></noscript>
+</form>
+
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?page=1">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            <a href="?sort={{ sort }}&amp;page=1">&laquo; first</a>
+            <a href="?sort={{ sort }}&amp;page={{ page_obj.previous_page_number }}">previous</a>
         {% endif %}
 
         <span class="current">
@@ -15,8 +25,8 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            <a href="?sort={{ sort }}&amp;page={{ page_obj.next_page_number }}">next</a>
+            <a href="?sort={{ sort }}&amp;page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
         {% endif %}
     </span>
 </div>
@@ -27,6 +37,9 @@
                 <th></th>
                 <th>Product ID</th>
                 <th>Description</th>
+                {% if sort == "gross" %}
+                <th>Gross Revenue (12 mo)</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -37,10 +50,13 @@
                 </td>
                 <td><a href="/product/{{ product.productid|urlencode }}">{{ product.productid }}</a></td>
                 <td class="desc"><span class="desc-text">{{ product.description|default:"&mdash;"|linebreaksbr }}</span></td>
+                {% if sort == "gross" %}
+                <td class="gross">${{ product.gross|floatformat:2 }}</td>
+                {% endif %}
             </tr>
             {% empty %}
             <tr>
-                <td colspan="3">No products found.</td>
+                <td colspan="{% if sort == "gross" %}4{% else %}3{% endif %}">No products found.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -49,8 +65,8 @@
     <div class="pagination">
         <span class="step-links">
             {% if page_obj.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                <a href="?sort={{ sort }}&amp;page=1">&laquo; first</a>
+                <a href="?sort={{ sort }}&amp;page={{ page_obj.previous_page_number }}">previous</a>
             {% endif %}
 
             <span class="current">
@@ -59,8 +75,8 @@
             </span>
 
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">next</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                <a href="?sort={{ sort }}&amp;page={{ page_obj.next_page_number }}">next</a>
+                <a href="?sort={{ sort }}&amp;page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
             {% endif %}
         </span>
     </div>

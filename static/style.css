@@ -160,3 +160,26 @@ table td.thumb img {
 .products td.desc img {
     display: none;
 }
+
+/* Product browser sort dropdown. */
+form.sort {
+    margin: 1em 0;
+    padding: 0.5em;
+    font-size: 1.2em;
+}
+form.sort select {
+    font-size: 1em;
+    padding: 0.3em;
+}
+
+/* Gross revenue column: right-aligned money. */
+.products td.gross {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Product browser zebra striping, scoped so order/status tables keep
+   their own green/red row semantics. */
+.products tbody tr:nth-child(even) td {
+    background-color: rgb(245, 245, 245);
+}
