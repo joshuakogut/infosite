@@ -58,7 +58,7 @@ def get_all_products_with_modifiers():
 def get_all_products_without_modifiers():
     products_without_modifiers = []
     page = 1
-    limit = 200  # You can increase up to 250
+    limit = 250  # You can increase up to 250
 
     while True:
         print(f"Getting page {page}")
