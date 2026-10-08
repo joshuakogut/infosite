@@ -118,3 +118,45 @@ span.age {
 .logo .info {
     margin-left: 20em;
 }
+table td.thumb {
+    width: 5em;
+    padding: 0.4em;
+}
+
+table td.thumb img {
+    display: block;
+    width: 4em;
+    height: 4em;
+    object-fit: contain;
+}
+
+/* Product browser only: every row the same height. */
+.products {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.products tr td {
+    vertical-align: middle;
+    height: 5em;
+    box-sizing: border-box;
+}
+
+.products td.desc {
+    overflow: hidden;
+}
+
+/* Inner span, not the <td>: line-clamp does not work on table cells. */
+.products td.desc .desc-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4em;
+    max-height: 4.2em;
+    word-break: break-word;
+}
+
+.products td.desc img {
+    display: none;
+}

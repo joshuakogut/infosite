@@ -11,6 +11,7 @@
 
         <span class="current">
             Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            {{ page_obj.paginator.count }} products.
         </span>
 
         {% if page_obj.has_next %}
@@ -20,13 +21,30 @@
     </span>
 </div>
 
-    <ul>
-        {% for product in page_obj %}
-        <li>
-            {% include 'product/snippet.html' %}
-        </li>
-        {% endfor %}
-    </ul>
+    <table class="products">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Product ID</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in page_obj %}
+            <tr>
+                <td class="thumb">
+                    <img src="/product/img/{{ product.productid|urlencode }}" alt="" loading="lazy" />
+                </td>
+                <td><a href="/product/{{ product.productid|urlencode }}">{{ product.productid }}</a></td>
+                <td class="desc"><span class="desc-text">{{ product.description|default:"&mdash;"|linebreaksbr }}</span></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No products found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
     <div class="pagination">
         <span class="step-links">
@@ -34,11 +52,12 @@
                 <a href="?page=1">&laquo; first</a>
                 <a href="?page={{ page_obj.previous_page_number }}">previous</a>
             {% endif %}
-    
+
             <span class="current">
                 Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                {{ page_obj.paginator.count }} products.
             </span>
-    
+
             {% if page_obj.has_next %}
                 <a href="?page={{ page_obj.next_page_number }}">next</a>
                 <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
