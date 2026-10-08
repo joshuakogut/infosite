@@ -718,8 +718,13 @@ class Tborderdetail(models.Model):
     guidorderdetail = models.CharField(
         db_column="GUIDOrderDetail", primary_key=True, max_length=36
     )
-    guidorder = models.CharField(
-        db_column="GUIDOrder", max_length=36, blank=True, null=True
+    guidorder = models.ForeignKey(
+        "Tborders",
+        on_delete=models.DO_NOTHING,
+        db_column="GUIDOrder",
+        related_name="details",
+        blank=True,
+        null=True,
     )
     linenumber = models.IntegerField(db_column="LineNumber", blank=True, null=True)
     sublinenumber = models.IntegerField(db_column="SubLineNumber")
@@ -731,8 +736,13 @@ class Tborderdetail(models.Model):
         blank=True,
         null=True,
     )
-    guidproduct = models.CharField(
-        db_column="GUIDProduct", max_length=36, blank=True, null=True
+    guidproduct = models.ForeignKey(
+        "product.Tbproduct",
+        on_delete=models.DO_NOTHING,
+        db_column="GUIDProduct",
+        related_name="orderdetails",
+        blank=True,
+        null=True,
     )
     productid = models.CharField(
         db_column="ProductID",
