@@ -33,14 +33,16 @@ import requests  # noqa: E402
 
 from product.models import Tbproduct, Tbproductprice  # noqa: E402
 
-CLIENT_ID = ""
-CLIENT_SECRET = ""
-ACCESS_TOKEN = ""
-STORE_HASH = ""
-BASE_URL = f"https://api.bigcommerce.com/stores/{STORE_HASH}/v3"
+from portal.dev_settings import (
+    BC_CLIENT_ID,
+    BC_CLIENT_SECRET,
+    BC_ACCESS_TOKEN,
+    BC_STORE_HASH,
+)
+BASE_URL = f"https://api.bigcommerce.com/stores/{BC_STORE_HASH}/v3"
 
 HEADERS = {
-    "X-Auth-Token": ACCESS_TOKEN,
+    "X-Auth-Token": BC_ACCESS_TOKEN,
     "Accept": "application/json",
     "Content-Type": "application/json",
 }
@@ -49,7 +51,7 @@ HEADERS = {
 def get_store_url():
     """Base storefront URL, e.g. https://www.lceperformance.com."""
     r = requests.get(
-        f"https://api.bigcommerce.com/stores/{STORE_HASH}/v2/store",
+        f"https://api.bigcommerce.com/stores/{BC_STORE_HASH}/v2/store",
         headers=HEADERS,
         timeout=30,
     )

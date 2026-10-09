@@ -8,6 +8,7 @@ import time
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "portal.settings")
 django.setup()
+from portal.dev_settings import T14_ID, T14_SECRET
 from portal.models import WaitingdropshipTurn14 as Turn14Orders
 
 
@@ -20,8 +21,8 @@ order_api = "https://apitest.turn14.com/v1/orders/po/"  # + po_number
 def get_new_token():
 
     auth_server_url = "https://apitest.turn14.com/v1/token"
-    client_id = ""
-    client_secret = ""
+    client_id = T14_ID
+    client_secret = T14_SECRET
     token_req_payload = {"grant_type": "client_credentials"}
 
     token_response = requests.post(

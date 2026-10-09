@@ -8,18 +8,20 @@ django.setup()
 
 import requests
 
-CLIENT_ID = ""
-CLIENT_SECRET = ""
-ACCESS_TOKEN = ""
-STORE_HASH = ""
-BASE_URL = f"https://api.bigcommerce.com/stores/{STORE_HASH}/v3/catalog/brands"
+from portal.dev_settings import (
+    BC_CLIENT_ID,
+    BC_CLIENT_SECRET,
+    BC_ACCESS_TOKEN,
+    BC_STORE_HASH,
+)
+BASE_URL = f"https://api.bigcommerce.com/stores/{BC_STORE_HASH}/v3/catalog/brands"
 
 import csv
 
 OUTPUT_FILE = "brands.csv"
 
 HEADERS = {
-    "X-Auth-Token": ACCESS_TOKEN,
+    "X-Auth-Token": BC_ACCESS_TOKEN,
     "Accept": "application/json",
 }
 

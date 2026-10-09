@@ -10,14 +10,16 @@ import requests
 from sync.models import Productwarehousesummary
 from django.db.models import Sum
 
-CLIENT_ID = ""
-CLIENT_SECRET = ""
-ACCESS_TOKEN = ""
-STORE_HASH = ""
-BASE_URL = f"https://api.bigcommerce.com/stores/{STORE_HASH}/v3"
+from portal.dev_settings import (
+    BC_CLIENT_ID,
+    BC_CLIENT_SECRET,
+    BC_ACCESS_TOKEN,
+    BC_STORE_HASH,
+)
+BASE_URL = f"https://api.bigcommerce.com/stores/{BC_STORE_HASH}/v3"
 
 HEADERS = {
-    "X-Auth-Token": ACCESS_TOKEN,
+    "X-Auth-Token": BC_ACCESS_TOKEN,
     "Accept": "application/json",
     "Content-Type": "application/json",
 }
